@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.3 - Dynamische Verbundgruppen</title>
+    <title>ShotAnalyst v6.4 - Präzisionsmesstechnik</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -23,7 +23,7 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.3</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.4</span></h1>
                 <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Präzisionsmesstechnik</p>
             </div>
 
@@ -39,16 +39,16 @@
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[10px] text-zinc-500 uppercase">Distanz (m)</label>
-                                    <input type="number" id="distance" value="100" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
+                                    <input type="number" id="distance" value="100" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-zinc-500 uppercase">Referenz (mm)</label>
-                                    <input type="number" id="refMm" value="25" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
+                                    <input type="number" id="refMm" value="25" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
                                 </div>
                             </div>
                             <div>
                                 <label class="text-[10px] text-zinc-500 uppercase">Geschoss-Ø (mm)</label>
-                                <input type="number" id="caliber" value="7.62" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
+                                <input type="number" id="caliber" value="7.62" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
                             </div>
                         </div>
                     </div>
@@ -70,14 +70,14 @@
                 <!-- Gruppen-Management -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppenauswahl</h2>
+                        <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppenverwaltung</h2>
                         <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-lg font-bold">+</button>
                     </div>
                     <div id="groupList" class="space-y-2">
                         <!-- Dynamische Liste -->
                     </div>
-                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-zinc-700 text-[10px] py-2 rounded hover:bg-zinc-800 transition uppercase tracking-widest text-zinc-400 hidden">
-                        Verbund erstellen
+                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-red-500 bg-red-500/10 text-[10px] py-2 rounded hover:bg-red-500/20 transition uppercase tracking-widest text-red-500 font-bold hidden">
+                        Verbund generieren
                     </button>
                 </section>
             </div>
@@ -105,10 +105,10 @@
 
                     <div id="merge-confirm" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
                         <div class="bg-zinc-900 border border-zinc-700 p-6 rounded-lg shadow-2xl max-w-sm text-center">
-                            <h3 class="text-red-500 font-bold mb-2">Verbundgruppe generieren</h3>
-                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Gruppen eine neue virtuelle Gruppe zur Gesamtanalyse erstellt werden?</p>
+                            <h3 class="text-red-500 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
+                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Elementen eine neue virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
                             <div class="flex gap-2 justify-center">
-                                <button onclick="app.finalizeMerge()" class="bg-red-600 px-4 py-2 text-[10px] uppercase font-bold rounded">Ja, Erstellen</button>
+                                <button onclick="app.finalizeMerge()" class="bg-red-600 px-4 py-2 text-[10px] uppercase font-bold rounded">Erstellen</button>
                                 <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>
                             </div>
                         </div>
@@ -122,8 +122,8 @@
                     <canvas id="result-canvas" width="800" height="800"></canvas>
                 </div>
                 <div class="mt-4 flex gap-8 text-[10px] uppercase tracking-widest text-zinc-500">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-500/20 border border-yellow-500 rounded-full"></span> R50 (50%)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500/10 border border-red-500 rounded-full"></span> R95 (95%)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-500/20 border border-yellow-500 rounded-full"></span> R50 (Zentralwert)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500/10 border border-red-500 rounded-full"></span> R95 (95%-Bereich)</div>
                     <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-500 border border-green-500"></span> Haltepunkt (POA)</div>
                 </div>
             </div>
@@ -220,10 +220,10 @@
                     else if (!this.scale.p2) this.scale.p2 = { x, y };
                     else { this.scale.p1 = { x, y }; this.scale.p2 = null; }
                 } else if (this.mode === 'poa') {
-                    if (this.activeGroup.isVirtual) return; // Verbundgruppe übernimmt POA der Quellen
+                    if (this.activeGroup.isVirtual) return; 
                     this.activeGroup.poa = { x, y };
                 } else if (this.mode === 'hit' && !this.pendingHit) {
-                    if (this.activeGroup.isVirtual) return; // In virtuellen Gruppen keine Schüsse hinzufügen
+                    if (this.activeGroup.isVirtual) return; 
                     this.pendingHit = { x, y };
                     document.getElementById('confirm-dialog').classList.remove('hidden');
                 } else if (this.mode === 'adjust') {
@@ -347,13 +347,11 @@
             finalizeMerge() {
                 const selectedGroups = this.groups.filter(g => g.selected);
                 const allHits = selectedGroups.flatMap(g => g.hits);
-                
-                // Haltepunkt: Erster gefundener POA dient als Referenz
                 const firstPoa = selectedGroups.find(g => g.poa)?.poa || null;
 
                 const virtualGroup = {
                     id: Date.now(),
-                    name: `Verbund (${selectedGroups.length} Grp)`,
+                    name: `Verbund (${selectedGroups.length} El.)`,
                     hits: JSON.parse(JSON.stringify(allHits)),
                     poa: firstPoa ? JSON.parse(JSON.stringify(firstPoa)) : null,
                     active: true,
@@ -403,12 +401,16 @@
 
                 let vector = "--", clicks = "--";
                 if (poa) {
-                    const dx = (coi.x - poa.x) * mmp, dy = (poa.y - coi.y) * mmp;
+                    const dx = (coi.x - poa.x) * mmp; // mm rechts
+                    const dy = (poa.y - coi.y) * mmp; // mm hoch (Y invertiert)
                     vector = `X:${dx.toFixed(1)} Y:${dy.toFixed(1)} mm`;
-                    const mmPerClick = distM * 0.1;
+                    
+                    const mmPerClick = distM * 0.1; // 1cm auf 100m
                     const cx = Math.round(dx / mmPerClick);
                     const cy = Math.round(dy / mmPerClick);
-                    clicks = `${cx>0?'R':'L'}${Math.abs(cx)} / ${cy>0?'H':'T'}${Math.abs(cy)}`;
+                    
+                    // Korrekturlogik: Treffpunkt rechts -> Klick nach links. Treffpunkt hoch -> Klick nach tief.
+                    clicks = `${cx > 0 ? 'L' : 'R'}${Math.abs(cx)} / ${cy > 0 ? 'T' : 'H'}${Math.abs(cy)}`;
                 }
 
                 return { es: (es*mmp).toFixed(2), mr: (mr*mmp).toFixed(2), r50: (r50*mmp).toFixed(2), r95: (r95*mmp).toFixed(2), vector, clicks, coi };
@@ -436,9 +438,9 @@
                 }
 
                 this.groups.forEach(g => {
-                    if (!g.active && !this.viewMode === 'analysis') return;
-                    const color = g.active ? '#ef4444' : 'rgba(82, 82, 91, 0.5)';
-                    const poaColor = g.active ? '#22c55e' : 'rgba(34, 197, 94, 0.3)';
+                    const isA = g.active;
+                    const color = isA ? '#ef4444' : 'rgba(82, 82, 91, 0.4)';
+                    const poaColor = isA ? '#22c55e' : 'rgba(34, 197, 94, 0.2)';
 
                     g.hits.forEach(h => {
                         this.ctx.strokeStyle = color; this.ctx.beginPath();
@@ -473,7 +475,7 @@
                         <div class="flex justify-between"><span>R50:</span> <span>${stats.r50} mm</span></div>
                         <div class="flex justify-between"><span>R95:</span> <span>${stats.r95} mm</span></div>
                         <div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${stats.vector}</span></div>
-                        <div class="mt-2 text-red-400 font-bold">Korrektur (0.1 MIL): ${stats.clicks}</div>
+                        <div class="mt-2 text-red-400 font-bold border border-red-500/20 p-2 bg-red-500/5 rounded">Korrektur (0.1 MIL): ${stats.clicks}</div>
                     `;
                 } else panel.classList.add('hidden');
             }
@@ -494,7 +496,7 @@
                 const group = this.activeGroup;
                 if (!group || group.hits.length === 0 || !group.poa) {
                     ctx.fillStyle = '#ef4444'; ctx.font = '14px monospace';
-                    ctx.fillText("KEINE DATEN ODER HALTEPUNKT FEHLT", 20, 30);
+                    ctx.fillText("HALTEPUNKT ODER DATEN FEHLEN", 20, 30);
                     return;
                 }
 
@@ -513,7 +515,7 @@
                 group.hits.forEach(hit => {
                     const dx_mm = (hit.x - group.poa.x) * mmp;
                     const dy_mm = (hit.y - group.poa.y) * mmp;
-                    ctx.fillStyle = group.isVirtual ? 'rgba(239, 68, 68, 0.5)' : 'rgba(239, 68, 68, 0.8)';
+                    ctx.fillStyle = group.isVirtual ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.7)';
                     ctx.beginPath();
                     ctx.arc(center.x + dx_mm * plotScale, center.y + dy_mm * plotScale, (calMm/2) * plotScale, 0, Math.PI*2);
                     ctx.fill();
@@ -522,8 +524,8 @@
 
                 ctx.fillStyle = '#71717a'; ctx.font = '10px monospace';
                 ctx.fillText(`Masstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
-                ctx.fillText(`${group.name} | Schuss: ${group.hits.length}`, 10, 20);
-                ctx.fillText(`ES: ${stats.es} mm | R95: ${stats.r95} mm`, 10, 40);
+                ctx.fillText(`${group.name.toUpperCase()} | n = ${group.hits.length}`, 10, 25);
+                ctx.fillText(`ES: ${stats.es} mm | R95: ${stats.r95} mm`, 10, 45);
             }
 
             renderUI() {
@@ -531,26 +533,26 @@
                 list.innerHTML = '';
                 this.groups.forEach(g => {
                     const d = document.createElement('div');
-                    d.className = `flex items-center gap-2 p-1 rounded group transition ${g.active ? 'bg-red-900/10' : ''}`;
+                    d.className = `flex items-center gap-2 p-1 rounded transition group ${g.active ? 'bg-red-500/5 ring-1 ring-red-500/30' : ''}`;
                     
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.className = 'w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-red-600 focus:ring-0 cursor-pointer';
-                    checkbox.checked = g.selected;
-                    checkbox.onchange = () => this.toggleSelection(g.id);
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.className = 'w-4 h-4 rounded-full border-zinc-700 bg-zinc-800 text-red-600 focus:ring-0 cursor-pointer';
+                    cb.checked = g.selected;
+                    cb.onchange = () => this.toggleSelection(g.id);
 
                     const label = document.createElement('div');
-                    label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center ${g.active ? 'border-red-500/50 text-red-400' : 'border-zinc-700 bg-zinc-800/50'}`;
+                    label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center transition ${g.active ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800'}`;
                     label.onclick = () => this.selectGroup(g.id);
                     label.innerHTML = `
                         <div class="flex flex-col">
                             <span class="text-xs font-bold ${g.isVirtual ? 'text-amber-500' : ''}">${g.name}</span>
-                            <span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span>
+                            <span class="text-[9px] uppercase text-zinc-500 tracking-tighter">${g.hits.length} Messwerte</span>
                         </div>
-                        <button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500">✕</button>
+                        <button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 transition px-1">✕</button>
                     `;
                     
-                    d.appendChild(checkbox);
+                    d.appendChild(cb);
                     d.appendChild(label);
                     list.appendChild(d);
                 });
@@ -570,18 +572,18 @@
             undo() { if (this.activeGroup && !this.activeGroup.isVirtual && this.activeGroup.hits.length > 0) { this.activeGroup.hits.pop(); this.draw(); this.renderUI(); } }
 
             exportCSV() {
-                let c = "Gruppe;Typ;Schuss;X_rel_mm;Y_rel_mm\n";
+                let c = "Bezeichnung;Typ;n;X_rel_mm;Y_rel_mm\n";
                 this.groups.forEach(g => {
                     const poa = g.poa || {x:0, y:0};
                     g.hits.forEach((h,i) => {
                         const dx = (h.x - poa.x) * this.mmPerPixel;
                         const dy = (poa.y - h.y) * this.mmPerPixel;
-                        c += `${g.name};${g.isVirtual?'Verbund':'Standard'};${i+1};${dx.toFixed(3)};${dy.toFixed(3)}\n`;
+                        c += `${g.name};${g.isVirtual?'Verbund':'Standard'};${i+1};${dx.toFixed(4)};${dy.toFixed(4)}\n`;
                     });
                 });
                 const b = new Blob([c], {type:'text/csv'});
                 const u = URL.createObjectURL(b);
-                const a = document.createElement('a'); a.href = u; a.download = 'ShotAnalyst_V63_Export.csv'; a.click();
+                const a = document.createElement('a'); a.href = u; a.download = 'Analyse_Export_v64.csv'; a.click();
             }
         }
         const app = new ShotAnalyst();
