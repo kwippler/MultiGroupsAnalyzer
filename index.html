@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.8</title>
+    <title>ShotAnalyst v6.9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -22,7 +22,7 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.8</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.9</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -342,7 +342,7 @@
             }
 
             drawResult() {
-                const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 50, y: h/2 };
+                const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
                 
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1; for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
@@ -353,18 +353,22 @@
                 
                 const plotS = 2; const mmp = this.mmPerPixel; const calM = parseFloat(document.getElementById('caliber').value) || 5.56; const s = this.calculateStats(group.hits, group.poa);
                 
-                // Zentrumsberechnung basierend auf skalierten Werten (WICHTIG: Transformation Bild -> mm -> Plot)
                 const coiX = center.x + s.dx * plotS;
                 const coiY = center.y - s.dy * plotS;
 
                 // Statistische Radien zentriert auf TPZ
-                ctx.setLineDash([5, 5]); 
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * plotS, 0, Math.PI*2); ctx.stroke(); 
-                ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * plotS, 0, Math.PI*2); ctx.stroke(); 
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([8, 4]); 
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * plotS, 0, Math.PI*2); ctx.stroke(); 
+                ctx.strokeStyle = 'rgba(234, 179, 8, 0.9)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * plotS, 0, Math.PI*2); ctx.stroke(); 
                 ctx.setLineDash([]);
+                ctx.lineWidth = 1;
 
-                ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(coiX, coiY, 3, 0, Math.PI*2); ctx.fill();
+                // POI (TPZ) Markierung
+                ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(coiX, coiY, 5, 0, Math.PI*2); ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
 
+                // Treffer zeichnen
                 group.hits.forEach((hit, idx) => {
                     const dx_mm = (hit.x - group.poa.x) * mmp; 
                     const dy_mm = (group.poa.y - hit.y) * mmp; 
@@ -374,13 +378,59 @@
                     ctx.fillStyle = '#fff'; ctx.font = '9px Inter'; ctx.fillText(idx+1, center.x + dx_mm * plotS + 5, center.y - dy_mm * plotS - 5);
                 });
 
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.9)'; ctx.fillRect(sx, sy, 220, 240); ctx.strokeStyle = '#ef4444'; ctx.strokeRect(sx, sy, 220, 240);
+                // --- Statistik & Legende Block (Rechts integriert) ---
+                const sx = w - 240, sy = 40; 
+                ctx.fillStyle = 'rgba(24, 24, 27, 0.95)'; ctx.fillRect(sx, sy, 220, 480); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, 220, 480);
+                
+                // Header
                 ctx.fillStyle = '#ef4444'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
-                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65); ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
+                
+                // Metadaten
+                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter';
+                ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50);
+                ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65);
+                ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
+
+                // Statistiken
                 const data = [ ["Extremstreuung (ES)", s.es + " mm"], ["Mittlerer Radius (MR)", s.mr + " mm"], ["R50 (Zentralwert)", s.r50 + " mm"], ["R95 (95% Vertr.)", s.r95 + " mm"], ["Abweichung X/Y", s.vector] ];
-                data.forEach((item, i) => { ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20)); ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 110 + (i*20)); ctx.textAlign = "left"; });
-                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 215); ctx.font = 'bold 14px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 232);
-                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter'; ctx.fillText(`Erzeugt mit ShotAnalyst v6.8 | Maßstab: 100mm = ${100 * plotS}px`, 20, h - 20);
+                data.forEach((item, i) => {
+                    ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20)); 
+                    ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 110 + (i*20)); ctx.textAlign = "left";
+                });
+
+                // Korrektur
+                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 225);
+                ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 245);
+
+                // --- Legende ---
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 285);
+                
+                const legendItems = [
+                    { label: "Haltepunkt (POA)", color: "#22c55e", type: "crosshair" },
+                    { label: "Treffpunktzentrum (POI)", color: "#ef4444", type: "point" },
+                    { label: "R50 (Zentralwert)", color: "#eab308", type: "line" },
+                    { label: "R95 (Vertrauensber.)", color: "#ef4444", type: "line" }
+                ];
+
+                legendItems.forEach((item, i) => {
+                    const ly = sy + 310 + (i * 30);
+                    ctx.strokeStyle = item.color; ctx.lineWidth = 2;
+                    if (item.type === "crosshair") {
+                        ctx.beginPath(); ctx.moveTo(sx + 15, ly); ctx.lineTo(sx + 35, ly); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(sx + 25, ly - 10); ctx.lineTo(sx + 25, ly + 10); ctx.stroke();
+                    } else if (item.type === "point") {
+                        ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(sx + 25, ly, 4, 0, Math.PI * 2); ctx.fill();
+                        ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
+                    } else if (item.type === "line") {
+                        ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx + 15, ly); ctx.lineTo(sx + 35, ly); ctx.stroke(); ctx.setLineDash([]);
+                    }
+                    ctx.fillStyle = "#a1a1aa"; ctx.font = "9px Inter"; ctx.fillText(item.label, sx + 45, ly + 3);
+                });
+
+                // Footer
+                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter';
+                ctx.fillText(`Maßstab: 100mm = ${100 * plotS}px`, 20, h - 20);
+                ctx.fillText(`v6.9 Precision SPC Suite`, sx + 15, sy + 465);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const link = document.createElement('a'); link.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; link.href = this.resCanvas.toDataURL("image/png"); link.click(); }
