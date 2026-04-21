@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.10</title>
+    <title>ShotAnalyst v6.12</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -15,6 +15,8 @@
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         #stats-panel { cursor: grab; }
         #stats-panel:active { cursor: grabbing; }
+        .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
+        .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
@@ -24,7 +26,7 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.10</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.12</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -119,6 +121,14 @@
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
                 </div>
+                <!-- Zoom Control Overlay -->
+                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-zinc-900/80 border border-zinc-700 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50">
+                    <div class="flex justify-between text-[10px] uppercase text-zinc-500 font-bold">
+                        <span>Zoom</span>
+                        <span id="zoom-val">100%</span>
+                    </div>
+                    <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="1" class="zoom-slider" oninput="app.updateZoom(this.value)">
+                </div>
             </div>
             
             <!-- Statistik (verschiebbar) -->
@@ -139,11 +149,11 @@
                 this.originalImg = null; this.croppedImg = null; this.viewMode = 'analysis'; 
                 
                 this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
-                this.imageHistory = []; // Stack für Bildzustände (Zuschnitt-Historie)
+                this.imageHistory = []; 
                 this.scale = { p1: null, p2: null }; this.mode = 'hit'; this.pendingHit = null; this.draggingHit = null;
                 this.cropStart = null; this.cropRect = null;
                 
-                // Fensterbewegung (Drag)
+                this.resultZoom = 1.0;
                 this.isDraggingStats = false;
                 this.statsPanel = document.getElementById('stats-panel');
                 this.dragOffset = { x: 0, y: 0 };
@@ -167,14 +177,17 @@
                 this.canvas.addEventListener('mouseleave', () => this.toggleCrosshair(false));
                 this.canvas.addEventListener('mouseenter', () => this.toggleCrosshair(true));
                 window.addEventListener('resize', () => { this.resizeCanvas(); this.draw(); });
-
-                // Stats Panel Drag
                 this.statsPanel.addEventListener('mousedown', (e) => this.startStatsDrag(e));
                 document.addEventListener('mousemove', (e) => this.doStatsDrag(e));
                 document.addEventListener('mouseup', () => this.stopStatsDrag());
             }
 
-            // Stats Drag Logic
+            updateZoom(val) {
+                this.resultZoom = parseFloat(val);
+                document.getElementById('zoom-val').innerText = Math.round(this.resultZoom * 100) + '%';
+                if (this.viewMode === 'result') this.drawResult();
+            }
+
             startStatsDrag(e) {
                 if (e.target.tagName === 'INPUT') return;
                 this.isDraggingStats = true;
@@ -185,7 +198,7 @@
                 if (!this.isDraggingStats) return;
                 this.statsPanel.style.left = `${e.clientX - this.dragOffset.x}px`;
                 this.statsPanel.style.top = `${e.clientY - this.dragOffset.y}px`;
-                this.statsPanel.style.right = 'auto'; // Verhindert Fixierung am rechten Rand
+                this.statsPanel.style.right = 'auto';
             }
             stopStatsDrag() { this.isDraggingStats = false; }
 
@@ -194,11 +207,8 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
-                        this.originalImg = tempImg; 
-                        this.croppedImg = tempImg; 
-                        this.imageHistory = []; // Reset Historie bei neuem Bild
-                        this.resizeCanvas(); 
-                        this.draw(); 
+                        this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
+                        this.resizeCanvas(); this.draw(); 
                     };
                     tempImg.src = event.target.result;
                 };
@@ -250,9 +260,7 @@
             onMouseUp() { if (this.mode === 'crop' && this.cropRect && this.cropRect.w > 10) this.finalizeCrop(); this.cropStart = null; this.draggingHit = null; this.draw(); }
 
             finalizeCrop() {
-                // Sichern des aktuellen Zustands in die Historie vor dem Zuschnitt
                 this.imageHistory.push(this.croppedImg);
-
                 const off = document.createElement('canvas');
                 off.width = this.cropRect.w * (this.croppedImg.width / this.canvas.width);
                 off.height = this.cropRect.h * (this.croppedImg.height / this.canvas.height);
@@ -264,7 +272,6 @@
             }
 
             resetData() { 
-                // Beim Zuschnitt werden die Daten zurückgesetzt, da die Koordinaten ungültig werden
                 this.groups.forEach(g => { g.hits = []; g.poa = null; });
                 this.scale = { p1: null, p2: null }; 
             }
@@ -334,7 +341,7 @@
                     if (isA && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g.poa);
                         if (s) {
-                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)'; // Cyan für TPZ/R50 Live
+                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)'; 
                             this.ctx.setLineDash([2, 2]); this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50px, 0, Math.PI*2); this.ctx.stroke(); this.ctx.setLineDash([]);
                             this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill();
                         }
@@ -349,58 +356,107 @@
                 const p = document.getElementById('stats-panel');
                 if (s) {
                     p.classList.remove('hidden');
-                    document.getElementById('stats-content').innerHTML = `<div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${s.es} mm</span></div><div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${s.mr} mm</span></div><div class="flex justify-between"><span>R50 (Zentral):</span> <span>${s.r50} mm</span></div><div class="flex justify-between"><span>R95 (Vertr.):</span> <span>${s.r95} mm</span></div><div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div><div class="mt-2 text-cyan-400 font-bold border border-cyan-500/20 p-2 bg-cyan-500/5 rounded text-center">Korrektur (0.1 MIL): ${s.clicks}</div>`;
+                    document.getElementById('stats-content').innerHTML = `<div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${s.es} mm</span></div><div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${s.mr} mm</span></div><div class="flex justify-between"><span>R50 (50% Vertr.):</span> <span>${s.r50} mm</span></div><div class="flex justify-between"><span>R95 (95% Vertr.):</span> <span>${s.r95} mm</span></div><div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div><div class="mt-2 text-cyan-400 font-bold border border-cyan-500/20 p-2 bg-cyan-500/5 rounded text-center">Korrektur (0.1 MIL): ${s.clicks}</div>`;
                 } else p.classList.add('hidden');
             }
 
             drawResult() {
-                const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
-                ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1; for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
-                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
-                const group = this.activeGroup; if (!group || group.hits.length === 0 || !group.poa) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 16px Inter'; ctx.fillText("HALTEPUNKT ODER MESSDATEN FEHLEN", 20, 40); return; }
-                const plotS = 2; const mmp = this.mmPerPixel; const calM = parseFloat(document.getElementById('caliber').value) || 5.56; const s = this.calculateStats(group.hits, group.poa);
-                const coiX = center.x + s.dx * plotS; const coiY = center.y - s.dy * plotS;
+                const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; 
+                const center = { x: w/2 - 100, y: h/2 }; // Horizontale Zentrierung verschoben für Bericht
                 
-                ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); 
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * plotS, 0, Math.PI*2); ctx.stroke(); 
-                ctx.strokeStyle = 'rgba(34, 211, 238, 0.9)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * plotS, 0, Math.PI*2); ctx.stroke(); 
+                ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
+                
+                // Basis-Skalierung Faktor 2 plus variabler Zoom
+                const currentPlotScale = 2 * this.resultZoom;
+                
+                // Gitter und Ringe (gezoomt)
+                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1; 
+                for(let r=50; r<600; r+=50) { 
+                    ctx.beginPath(); ctx.arc(center.x, center.y, r * this.resultZoom, 0, Math.PI*2); ctx.stroke(); 
+                }
+                
+                // Achsenkreuz (Haltepunkt / POA)
+                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; 
+                ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x * 2, center.y); ctx.stroke(); 
+                ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
+                
+                const group = this.activeGroup; if (!group || group.hits.length === 0 || !group.poa) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 16px Inter'; ctx.fillText("HALTEPUNKT ODER MESSDATEN FEHLEN", 20, 40); return; }
+                
+                const mmp = this.mmPerPixel; const calM = parseFloat(document.getElementById('caliber').value) || 5.56; 
+                const s = this.calculateStats(group.hits, group.poa);
+                const coiX = center.x + s.dx * currentPlotScale; const coiY = center.y - s.dy * currentPlotScale;
+                
+                // Statistische Radien zentriert auf TPZ
+                ctx.lineWidth = 3; ctx.setLineDash([8, 4]); 
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * currentPlotScale, 0, Math.PI*2); ctx.stroke(); 
+                ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * currentPlotScale, 0, Math.PI*2); ctx.stroke(); 
                 ctx.setLineDash([]); ctx.lineWidth = 1;
                 
                 // POI Markierung in Cyan
-                ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 5, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
+                ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 6, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
 
+                // Treffer zeichnen (Vektor-basiert für Schärfe)
                 group.hits.forEach((hit, idx) => {
                     const dx_mm = (hit.x - group.poa.x) * mmp; const dy_mm = (group.poa.y - hit.y) * mmp; 
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.6)'; ctx.beginPath(); ctx.arc(center.x + dx_mm * plotS, center.y - dy_mm * plotS, (calM/2) * plotS, 0, Math.PI*2); ctx.fill(); 
-                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.stroke(); 
-                    ctx.fillStyle = '#fff'; ctx.font = '9px Inter'; ctx.fillText(idx+1, center.x + dx_mm * plotS + 5, center.y - dy_mm * plotS - 5);
+                    const hx = center.x + dx_mm * currentPlotScale;
+                    const hy = center.y - dy_mm * currentPlotScale;
+                    
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); 
+                    ctx.arc(hx, hy, (calM/2) * currentPlotScale, 0, Math.PI*2); ctx.fill(); 
+                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1.5; ctx.stroke(); 
+                    
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; 
+                    ctx.fillText(idx+1, hx + 5, hy - 5);
                 });
 
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.95)'; ctx.fillRect(sx, sy, 220, 480); ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, 220, 480);
+                // --- Berichts-Panel (Rechts, statisch ohne Zoom-Einfluss auf Schrift) ---
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 520); ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, 220, 520);
+                
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65); ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
-                const data = [ ["Extremstreuung (ES)", s.es + " mm"], ["Mittlerer Radius (MR)", s.mr + " mm"], ["R50 (Zentralwert)", s.r50 + " mm"], ["R95 (95% Vertr.)", s.r95 + " mm"], ["Abweichung X/Y", s.vector] ];
-                data.forEach((item, i) => { ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20)); ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 110 + (i*20)); ctx.textAlign = "left"; });
+                
+                const data = [ ["Extremstreuung (ES)", s.es + " mm"], ["Mittlerer Radius (MR)", s.mr + " mm"], ["R50 (50% Vertr.)", s.r50 + " mm"], ["R95 (95% Vertr.)", s.r95 + " mm"], ["Abweichung X/Y", s.vector] ];
+                data.forEach((item, i) => { 
+                    ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20)); 
+                    ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 110 + (i*20)); ctx.textAlign = "left"; 
+                });
+                
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 225); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 245);
+                
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 285);
                 const legendItems = [
                     { label: "Haltepunkt (POA)", color: "#22c55e", type: "crosshair" },
                     { label: "Treffpunktzentrum (POI)", color: "#22d3ee", type: "point" },
-                    { label: "R50 (Zentralwert)", color: "#22d3ee", type: "line" },
-                    { label: "R95 (Vertrauensber.)", color: "#ef4444", type: "line" }
+                    { label: "R50 (50% Vertrauensb.)", color: "#22d3ee", type: "line" },
+                    { label: "R95 (95% Vertrauensb.)", color: "#ef4444", type: "line" }
                 ];
                 legendItems.forEach((item, i) => {
                     const ly = sy + 310 + (i * 30); ctx.strokeStyle = item.color; ctx.lineWidth = 2;
-                    if (item.type === "crosshair") { ctx.beginPath(); ctx.moveTo(sx + 15, ly); ctx.lineTo(sx + 35, ly); ctx.stroke(); ctx.beginPath(); ctx.moveTo(sx + 25, ly - 10); ctx.lineTo(sx + 25, ly + 10); ctx.stroke(); }
-                    else if (item.type === "point") { ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(sx + 25, ly, 4, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke(); }
-                    else if (item.type === "line") { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx + 15, ly); ctx.lineTo(sx + 35, ly); ctx.stroke(); ctx.setLineDash([]); }
+                    if (item.type === "crosshair") { 
+                        ctx.beginPath(); ctx.moveTo(sx + 15, ly); ctx.lineTo(sx + 35, ly); ctx.stroke(); 
+                        ctx.beginPath(); ctx.moveTo(sx + 25, ly - 10); ctx.lineTo(sx + 25, ly + 10); ctx.stroke(); 
+                    } else if (item.type === "point") { 
+                        ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(sx + 25, ly, 4, 0, Math.PI * 2); ctx.fill(); 
+                        ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke(); 
+                    } else if (item.type === "line") { 
+                        ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx + 15, ly); ctx.lineTo(sx + 35, ly); ctx.stroke(); ctx.setLineDash([]); 
+                    }
                     ctx.fillStyle = "#a1a1aa"; ctx.font = "9px Inter"; ctx.fillText(item.label, sx + 45, ly + 3);
                 });
-                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter'; ctx.fillText(`Maßstab: 100mm = ${100 * plotS}px`, 20, h - 20); ctx.fillText(`v6.10 Precision SPC Suite`, sx + 15, sy + 465);
+                
+                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter'; 
+                ctx.fillText(`Zoom-Stufe: ${Math.round(this.resultZoom * 100)}%`, sx + 15, sy + 445);
+                ctx.fillText(`Maßstab: 100mm = ${Math.round(100 * currentPlotScale)}px`, sx + 15, sy + 460); 
+                ctx.fillText(`v6.12 Precision SPC Suite`, sx + 15, sy + 505);
             }
 
-            savePlot() { if (this.viewMode !== 'result') this.toggleView(); const link = document.createElement('a'); link.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; link.href = this.resCanvas.toDataURL("image/png"); link.click(); }
+            savePlot() { 
+                if (this.viewMode !== 'result') this.toggleView(); 
+                const link = document.createElement('a'); 
+                link.download = `ShotAnalyst_Bericht_${this.activeGroup.name}_${Math.round(this.resultZoom*100)}.png`; 
+                link.href = this.resCanvas.toDataURL("image/png"); 
+                link.click(); 
+            }
 
             renderUI() {
                 const list = document.getElementById('groupList'); list.innerHTML = '';
@@ -418,15 +474,11 @@
             deleteGroup(id) { if (this.groups.length > 1) { this.groups = this.groups.filter(g => g.id !== id); if (!this.activeGroup) this.groups[0].active = true; this.draw(); this.renderUI(); } }
             
             undo() { 
-                // Priorität 1: Letzten Treffer löschen
                 if (this.activeGroup && !this.activeGroup.isVirtual && this.activeGroup.hits.length > 0) { 
                     this.activeGroup.hits.pop(); 
                 } 
-                // Priorität 2: Falls keine Treffer da sind, letzten Zuschnitt rückgängig machen
                 else if (this.imageHistory.length > 0) {
                     this.croppedImg = this.imageHistory.pop();
-                    // Beim Undo eines Zuschnitts bleiben die Daten gelöscht (Konsistenz), 
-                    // aber das Bild wird wiederhergestellt.
                     this.resizeCanvas();
                 }
                 this.draw(); this.renderUI(); 
