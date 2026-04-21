@@ -3,29 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.2.2 - Präzisionsstatistik</title>
+    <title>ShotAnalyst v6.3 - Dynamische Verbundgruppen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; cursor: crosshair; }
         .no-cursor { cursor: default; }
         #analysis-canvas, #result-canvas { image-rendering: high-quality; }
-        .sidebar-scroll { max-height: calc(100vh - 250px); overflow-y: auto; }
+        .sidebar-scroll { max-height: calc(100vh - 280px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .group-checkbox:checked + label { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
+        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.2.2</span></h1>
-                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Statistische Prozesskontrolle</p>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.3</span></h1>
+                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Präzisionsmesstechnik</p>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
+                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Systemparameter</h2>
                     <div class="space-y-3">
@@ -33,13 +36,15 @@
                         <input type="file" id="fileInput" class="hidden" accept="image/*">
                         
                         <div class="space-y-2">
-                            <div>
-                                <label class="text-[10px] text-zinc-500 uppercase">Zielentfernung (m)</label>
-                                <input type="number" id="distance" value="100" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
-                            </div>
-                            <div>
-                                <label class="text-[10px] text-zinc-500 uppercase">Referenzstrecke (mm)</label>
-                                <input type="number" id="refMm" value="25" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 uppercase">Distanz (m)</label>
+                                    <input type="number" id="distance" value="100" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] text-zinc-500 uppercase">Referenz (mm)</label>
+                                    <input type="number" id="refMm" value="25" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500">
+                                </div>
                             </div>
                             <div>
                                 <label class="text-[10px] text-zinc-500 uppercase">Geschoss-Ø (mm)</label>
@@ -49,6 +54,7 @@
                     </div>
                 </section>
 
+                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -61,13 +67,18 @@
                     </div>
                 </section>
 
+                <!-- Gruppen-Management -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppen</h2>
-                        <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-lg">+</button>
+                        <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppenauswahl</h2>
+                        <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-lg font-bold">+</button>
                     </div>
-                    <div id="groupList" class="space-y-2"></div>
-                    <button onclick="app.toggleCompoundMode()" id="compoundBtn" class="mt-4 w-full border border-zinc-700 text-[10px] py-1 rounded hover:bg-zinc-800 transition uppercase tracking-widest text-zinc-400">Verbundgruppe</button>
+                    <div id="groupList" class="space-y-2">
+                        <!-- Dynamische Liste -->
+                    </div>
+                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-zinc-700 text-[10px] py-2 rounded hover:bg-zinc-800 transition uppercase tracking-widest text-zinc-400 hidden">
+                        Verbund erstellen
+                    </button>
                 </section>
             </div>
 
@@ -77,33 +88,49 @@
             </div>
         </aside>
 
+        <!-- Hauptbereich -->
         <main class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+            <!-- Analyse-Modus -->
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
                     <div id="ch-v" class="absolute top-0 w-[1px] h-full bg-red-500/30 pointer-events-none hidden"></div>
                     <div id="ch-h" class="absolute left-0 w-full h-[1px] bg-red-500/30 pointer-events-none hidden"></div>
                     
-                    <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-red-500 p-2 rounded shadow-xl hidden flex gap-2">
-                        <button onclick="app.confirmHit()" class="bg-green-700 px-3 py-1 text-[10px] uppercase font-bold rounded">Bestätigen</button>
-                        <button onclick="app.cancelHit()" class="bg-zinc-700 px-3 py-1 text-[10px] uppercase font-bold rounded">Abbruch</button>
+                    <!-- Modale Dialoge -->
+                    <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-red-500 p-2 rounded shadow-xl hidden flex gap-2 z-50">
+                        <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Treffer Bestätigen</button>
+                        <button onclick="app.cancelHit()" class="bg-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Abbruch</button>
+                    </div>
+
+                    <div id="merge-confirm" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
+                        <div class="bg-zinc-900 border border-zinc-700 p-6 rounded-lg shadow-2xl max-w-sm text-center">
+                            <h3 class="text-red-500 font-bold mb-2">Verbundgruppe generieren</h3>
+                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Gruppen eine neue virtuelle Gruppe zur Gesamtanalyse erstellt werden?</p>
+                            <div class="flex gap-2 justify-center">
+                                <button onclick="app.finalizeMerge()" class="bg-red-600 px-4 py-2 text-[10px] uppercase font-bold rounded">Ja, Erstellen</button>
+                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Plot-Modus -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 800px; height: 800px;">
                     <canvas id="result-canvas" width="800" height="800"></canvas>
                 </div>
                 <div class="mt-4 flex gap-8 text-[10px] uppercase tracking-widest text-zinc-500">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-500/20 border border-yellow-500 rounded-full"></span> R50 (Zentralwert)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500/10 border border-red-500 rounded-full"></span> R95 (95% Vertrauensradius)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-500/20 border border-yellow-500 rounded-full"></span> R50 (50%)</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500/10 border border-red-500 rounded-full"></span> R95 (95%)</div>
                     <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-500 border border-green-500"></span> Haltepunkt (POA)</div>
                 </div>
             </div>
             
+            <!-- Statistik -->
             <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden">
-                <h3 class="text-xs font-bold text-red-500 uppercase mb-3 border-b border-zinc-700 pb-1">Statistik</h3>
+                <h3 class="text-xs font-bold text-red-500 uppercase mb-3 border-b border-zinc-700 pb-1">Analyseergebnisse</h3>
                 <div id="stats-content" class="space-y-2 text-xs"></div>
             </div>
         </main>
@@ -121,10 +148,9 @@
                 this.croppedImg = null;
                 this.viewMode = 'analysis'; 
                 
-                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true }];
+                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
                 this.scale = { p1: null, p2: null };
                 this.mode = 'hit';
-                this.compoundMode = false;
                 this.pendingHit = null;
                 this.draggingHit = null;
                 
@@ -194,11 +220,14 @@
                     else if (!this.scale.p2) this.scale.p2 = { x, y };
                     else { this.scale.p1 = { x, y }; this.scale.p2 = null; }
                 } else if (this.mode === 'poa') {
+                    if (this.activeGroup.isVirtual) return; // Verbundgruppe übernimmt POA der Quellen
                     this.activeGroup.poa = { x, y };
-                } else if (this.mode === 'hit' && !this.compoundMode && !this.pendingHit) {
+                } else if (this.mode === 'hit' && !this.pendingHit) {
+                    if (this.activeGroup.isVirtual) return; // In virtuellen Gruppen keine Schüsse hinzufügen
                     this.pendingHit = { x, y };
                     document.getElementById('confirm-dialog').classList.remove('hidden');
                 } else if (this.mode === 'adjust') {
+                    if (this.activeGroup.isVirtual) return;
                     const hit = this.activeGroup.hits.find(h => Math.hypot(h.x - x, h.y - y) < 20);
                     if (hit) this.draggingHit = hit;
                 }
@@ -252,7 +281,7 @@
             }
 
             resetData() {
-                this.groups.forEach(g => { g.hits = []; g.poa = null; });
+                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
                 this.scale = { p1: null, p2: null };
             }
 
@@ -294,35 +323,59 @@
 
             addGroup() {
                 this.groups.forEach(g => g.active = false);
-                this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true });
+                this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false });
                 this.draw(); this.renderUI();
             }
 
             selectGroup(id) {
                 this.groups.forEach(g => g.active = (g.id === id));
-                this.compoundMode = false;
                 this.draw(); this.renderUI();
             }
 
-            toggleCompoundMode() {
-                this.compoundMode = !this.compoundMode;
-                if (this.compoundMode) this.groups.forEach(g => g.active = false);
-                else if (this.groups.length > 0) this.groups[0].active = true;
-                this.draw(); this.renderUI();
+            toggleSelection(id) {
+                const g = this.groups.find(x => x.id === id);
+                if (g) g.selected = !g.selected;
+                this.renderUI();
+            }
+
+            requestMerge() {
+                const selectedCount = this.groups.filter(g => g.selected).length;
+                if (selectedCount < 2) return;
+                document.getElementById('merge-confirm').classList.remove('hidden');
+            }
+
+            finalizeMerge() {
+                const selectedGroups = this.groups.filter(g => g.selected);
+                const allHits = selectedGroups.flatMap(g => g.hits);
+                
+                // Haltepunkt: Erster gefundener POA dient als Referenz
+                const firstPoa = selectedGroups.find(g => g.poa)?.poa || null;
+
+                const virtualGroup = {
+                    id: Date.now(),
+                    name: `Verbund (${selectedGroups.length} Grp)`,
+                    hits: JSON.parse(JSON.stringify(allHits)),
+                    poa: firstPoa ? JSON.parse(JSON.stringify(firstPoa)) : null,
+                    active: true,
+                    selected: false,
+                    isVirtual: true
+                };
+
+                this.groups.forEach(g => { g.active = false; g.selected = false; });
+                this.groups.push(virtualGroup);
+                
+                document.getElementById('merge-confirm').classList.add('hidden');
+                this.draw();
+                this.renderUI();
             }
 
             getPercentile(arr, p) {
                 if (arr.length === 0) return 0;
-                if (arr.length === 1) return arr[0];
                 const sorted = [...arr].sort((a, b) => a - b);
                 const pos = (sorted.length - 1) * p;
                 const base = Math.floor(pos);
                 const rest = pos - base;
-                if (sorted[base + 1] !== undefined) {
-                    return sorted[base] + rest * (sorted[base + 1] - sorted[base]);
-                } else {
-                    return sorted[base];
-                }
+                return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base + 1] - sorted[base]) : sorted[base];
             }
 
             calculateStats(hits, poa) {
@@ -382,17 +435,18 @@
                     this.ctx.stroke();
                 }
 
-                const groups = this.compoundMode ? this.groups : [this.activeGroup];
-                groups.forEach(g => {
-                    if (!g) return;
-                    const color = g.active ? '#ef4444' : '#52525b';
+                this.groups.forEach(g => {
+                    if (!g.active && !this.viewMode === 'analysis') return;
+                    const color = g.active ? '#ef4444' : 'rgba(82, 82, 91, 0.5)';
+                    const poaColor = g.active ? '#22c55e' : 'rgba(34, 197, 94, 0.3)';
+
                     g.hits.forEach(h => {
                         this.ctx.strokeStyle = color; this.ctx.beginPath();
                         this.ctx.arc(h.x, h.y, calPix/2, 0, Math.PI*2);
                         this.ctx.stroke();
                     });
                     if (g.poa) {
-                        this.ctx.strokeStyle = '#22c55e'; this.ctx.beginPath();
+                        this.ctx.strokeStyle = poaColor; this.ctx.beginPath();
                         this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y);
                         this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10);
                         this.ctx.stroke();
@@ -409,19 +463,17 @@
             }
 
             updateStats() {
-                const allHits = this.compoundMode ? this.groups.flatMap(g=>g.hits) : (this.activeGroup?.hits || []);
-                const poa = this.compoundMode ? this.groups.find(g=>g.poa)?.poa : this.activeGroup?.poa;
-                const stats = this.calculateStats(allHits, poa);
+                const stats = this.calculateStats(this.activeGroup?.hits || [], this.activeGroup?.poa);
                 const panel = document.getElementById('stats-panel');
                 if (stats) {
                     panel.classList.remove('hidden');
                     document.getElementById('stats-content').innerHTML = `
-                        <div class="flex justify-between"><span>ES (Extrem):</span> <span>${stats.es} mm</span></div>
-                        <div class="flex justify-between"><span>MR (Mittel):</span> <span>${stats.mr} mm</span></div>
+                        <div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${stats.es} mm</span></div>
+                        <div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${stats.mr} mm</span></div>
                         <div class="flex justify-between"><span>R50:</span> <span>${stats.r50} mm</span></div>
                         <div class="flex justify-between"><span>R95:</span> <span>${stats.r95} mm</span></div>
-                        <div class="flex justify-between"><span>Vektor:</span> <span>${stats.vector}</span></div>
-                        <div class="mt-2 pt-2 border-t border-zinc-800 text-red-400 font-bold">Korrektur (0.1 MIL): ${stats.clicks}</div>
+                        <div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${stats.vector}</span></div>
+                        <div class="mt-2 text-red-400 font-bold">Korrektur (0.1 MIL): ${stats.clicks}</div>
                     `;
                 } else panel.classList.add('hidden');
             }
@@ -432,7 +484,6 @@
                 const center = { x: w/2, y: h/2 };
                 
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
                 
@@ -440,10 +491,8 @@
                 ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(w, center.y); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
 
-                const hits = this.compoundMode ? this.groups.flatMap(g=>g.hits) : (this.activeGroup?.hits || []);
-                const poa = this.compoundMode ? (this.groups.find(g=>g.poa)?.poa || null) : (this.activeGroup?.poa || null);
-                
-                if (hits.length === 0 || !poa) {
+                const group = this.activeGroup;
+                if (!group || group.hits.length === 0 || !group.poa) {
                     ctx.fillStyle = '#ef4444'; ctx.font = '14px monospace';
                     ctx.fillText("KEINE DATEN ODER HALTEPUNKT FEHLT", 20, 30);
                     return;
@@ -452,21 +501,19 @@
                 const plotScale = 2; 
                 const mmp = this.mmPerPixel;
                 const calMm = parseFloat(document.getElementById('caliber').value) || 7.62;
-                const stats = this.calculateStats(hits, poa);
+                const stats = this.calculateStats(group.hits, group.poa);
 
                 ctx.setLineDash([5, 5]);
                 ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath();
                 ctx.arc(center.x, center.y, parseFloat(stats.r95) * plotScale, 0, Math.PI*2); ctx.stroke();
-                
                 ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; ctx.beginPath();
                 ctx.arc(center.x, center.y, parseFloat(stats.r50) * plotScale, 0, Math.PI*2); ctx.stroke();
                 ctx.setLineDash([]);
 
-                hits.forEach(hit => {
-                    const dx_mm = (hit.x - poa.x) * mmp;
-                    const dy_mm = (hit.y - poa.y) * mmp;
-                    
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+                group.hits.forEach(hit => {
+                    const dx_mm = (hit.x - group.poa.x) * mmp;
+                    const dy_mm = (hit.y - group.poa.y) * mmp;
+                    ctx.fillStyle = group.isVirtual ? 'rgba(239, 68, 68, 0.5)' : 'rgba(239, 68, 68, 0.8)';
                     ctx.beginPath();
                     ctx.arc(center.x + dx_mm * plotScale, center.y + dy_mm * plotScale, (calMm/2) * plotScale, 0, Math.PI*2);
                     ctx.fill();
@@ -474,8 +521,9 @@
                 });
 
                 ctx.fillStyle = '#71717a'; ctx.font = '10px monospace';
-                ctx.fillText(`Maßstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
-                ctx.fillText(`System-ES: ${stats.es} mm`, 10, h - 40);
+                ctx.fillText(`Masstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
+                ctx.fillText(`${group.name} | Schuss: ${group.hits.length}`, 10, 20);
+                ctx.fillText(`ES: ${stats.es} mm | R95: ${stats.r95} mm`, 10, 40);
             }
 
             renderUI() {
@@ -483,11 +531,32 @@
                 list.innerHTML = '';
                 this.groups.forEach(g => {
                     const d = document.createElement('div');
-                    d.className = `p-2 rounded border cursor-pointer flex justify-between ${g.active ? 'bg-red-900/10 border-red-500/50 text-red-400' : 'bg-zinc-800 border-zinc-700'}`;
-                    d.onclick = () => this.selectGroup(g.id);
-                    d.innerHTML = `<span>${g.name} (${g.hits.length})</span><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})">✕</button>`;
+                    d.className = `flex items-center gap-2 p-1 rounded group transition ${g.active ? 'bg-red-900/10' : ''}`;
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-red-600 focus:ring-0 cursor-pointer';
+                    checkbox.checked = g.selected;
+                    checkbox.onchange = () => this.toggleSelection(g.id);
+
+                    const label = document.createElement('div');
+                    label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center ${g.active ? 'border-red-500/50 text-red-400' : 'border-zinc-700 bg-zinc-800/50'}`;
+                    label.onclick = () => this.selectGroup(g.id);
+                    label.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold ${g.isVirtual ? 'text-amber-500' : ''}">${g.name}</span>
+                            <span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500">✕</button>
+                    `;
+                    
+                    d.appendChild(checkbox);
+                    d.appendChild(label);
                     list.appendChild(d);
                 });
+
+                const selectedCount = this.groups.filter(g => g.selected).length;
+                document.getElementById('mergeBtn').classList.toggle('hidden', selectedCount < 2);
             }
 
             deleteGroup(id) {
@@ -498,21 +567,21 @@
                 }
             }
 
-            undo() { if (this.activeGroup?.hits.length > 0) { this.activeGroup.hits.pop(); this.draw(); this.renderUI(); } }
+            undo() { if (this.activeGroup && !this.activeGroup.isVirtual && this.activeGroup.hits.length > 0) { this.activeGroup.hits.pop(); this.draw(); this.renderUI(); } }
 
             exportCSV() {
-                let c = "Gruppe;Nr;X_rel_mm;Y_rel_mm\n";
+                let c = "Gruppe;Typ;Schuss;X_rel_mm;Y_rel_mm\n";
                 this.groups.forEach(g => {
                     const poa = g.poa || {x:0, y:0};
                     g.hits.forEach((h,i) => {
                         const dx = (h.x - poa.x) * this.mmPerPixel;
                         const dy = (poa.y - h.y) * this.mmPerPixel;
-                        c += `${g.name};${i+1};${dx.toFixed(3)};${dy.toFixed(3)}\n`;
+                        c += `${g.name};${g.isVirtual?'Verbund':'Standard'};${i+1};${dx.toFixed(3)};${dy.toFixed(3)}\n`;
                     });
                 });
                 const b = new Blob([c], {type:'text/csv'});
                 const u = URL.createObjectURL(b);
-                const a = document.createElement('a'); a.href = u; a.download = 'Ballistik_Export.csv'; a.click();
+                const a = document.createElement('a'); a.href = u; a.download = 'ShotAnalyst_V63_Export.csv'; a.click();
             }
         }
         const app = new ShotAnalyst();
