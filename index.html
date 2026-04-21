@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.5</title>
+    <title>ShotAnalyst v6.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -13,21 +13,18 @@
         .sidebar-scroll { max-height: calc(100vh - 280px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        .group-checkbox:checked + label { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
-        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.5</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.6</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
-                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Systemparameter</h2>
                     <div class="space-y-3">
@@ -53,7 +50,6 @@
                     </div>
                 </section>
 
-                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -66,18 +62,13 @@
                     </div>
                 </section>
 
-                <!-- Gruppen-Management -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppenverwaltung</h2>
                         <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-lg font-bold">+</button>
                     </div>
-                    <div id="groupList" class="space-y-2">
-                        <!-- Dynamische Liste -->
-                    </div>
-                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-red-500 bg-red-500/10 text-[10px] py-2 rounded hover:bg-red-500/20 transition uppercase tracking-widest text-red-500 font-bold hidden">
-                        Verbund generieren
-                    </button>
+                    <div id="groupList" class="space-y-2"></div>
+                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-red-500 bg-red-500/10 text-[10px] py-2 rounded hover:bg-red-500/20 transition uppercase tracking-widest text-red-500 font-bold hidden">Verbund generieren</button>
                 </section>
             </div>
 
@@ -90,16 +81,13 @@
             </div>
         </aside>
 
-        <!-- Hauptbereich -->
         <main class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-            <!-- Analyse-Modus -->
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
                     <div id="ch-v" class="absolute top-0 w-[1px] h-full bg-red-500/30 pointer-events-none hidden"></div>
                     <div id="ch-h" class="absolute left-0 w-full h-[1px] bg-red-500/30 pointer-events-none hidden"></div>
                     
-                    <!-- Modale Dialoge -->
                     <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-red-500 p-2 rounded shadow-xl hidden flex gap-2 z-50">
                         <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Treffer Bestätigen</button>
                         <button onclick="app.cancelHit()" class="bg-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Abbruch</button>
@@ -108,7 +96,7 @@
                     <div id="merge-confirm" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
                         <div class="bg-zinc-900 border border-zinc-700 p-6 rounded-lg shadow-2xl max-w-sm text-center">
                             <h3 class="text-red-500 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
-                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Elementen eine neue virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
+                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
                             <div class="flex gap-2 justify-center">
                                 <button onclick="app.finalizeMerge()" class="bg-red-600 px-4 py-2 text-[10px] uppercase font-bold rounded">Erstellen</button>
                                 <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>
@@ -118,14 +106,12 @@
                 </div>
             </div>
 
-            <!-- Plot-Modus -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
                 </div>
             </div>
             
-            <!-- Floating Statistics (nur Analyse-Ansicht) -->
             <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden">
                 <h3 class="text-xs font-bold text-red-500 uppercase mb-3 border-b border-zinc-700 pb-1">Analyseergebnisse</h3>
                 <div id="stats-content" class="space-y-2 text-xs"></div>
@@ -140,26 +126,14 @@
                 this.resCanvas = document.getElementById('result-canvas');
                 this.ctx = this.canvas.getContext('2d');
                 this.resCtx = this.resCanvas.getContext('2d');
-                
-                this.originalImg = null;
-                this.croppedImg = null;
-                this.viewMode = 'analysis'; 
-                
+                this.originalImg = null; this.croppedImg = null; this.viewMode = 'analysis'; 
                 this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
-                this.scale = { p1: null, p2: null };
-                this.mode = 'hit';
-                this.pendingHit = null;
-                this.draggingHit = null;
-                
-                this.cropStart = null;
-                this.cropRect = null;
-
-                this.initEventListeners();
-                this.renderUI();
+                this.scale = { p1: null, p2: null }; this.mode = 'hit'; this.pendingHit = null; this.draggingHit = null;
+                this.cropStart = null; this.cropRect = null;
+                this.initEventListeners(); this.renderUI();
             }
 
             get activeGroup() { return this.groups.find(g => g.active); }
-            
             get mmPerPixel() {
                 if (!this.scale.p1 || !this.scale.p2) return 1;
                 const pixDist = Math.hypot(this.scale.p1.x - this.scale.p2.x, this.scale.p1.y - this.scale.p2.y);
@@ -181,12 +155,7 @@
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const tempImg = new Image();
-                    tempImg.onload = () => {
-                        this.originalImg = tempImg;
-                        this.croppedImg = tempImg;
-                        this.resizeCanvas();
-                        this.draw();
-                    };
+                    tempImg.onload = () => { this.originalImg = tempImg; this.croppedImg = tempImg; this.resizeCanvas(); this.draw(); };
                     tempImg.src = event.target.result;
                 };
                 reader.readAsDataURL(e.target.files[0]);
@@ -201,32 +170,23 @@
                 const ratio = w / h;
                 if (w > maxWidth) { w = maxWidth; h = w / ratio; }
                 if (h > maxHeight) { h = maxHeight; w = h * ratio; }
-                this.canvas.width = w;
-                this.canvas.height = h;
+                this.canvas.width = w; this.canvas.height = h;
             }
 
             onMouseDown(e) {
                 if (!this.croppedImg || this.viewMode === 'result') return;
                 const rect = this.canvas.getBoundingClientRect();
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
-
-                if (this.mode === 'crop') {
-                    this.cropStart = { x, y };
-                } else if (this.mode === 'scale') {
+                if (this.mode === 'crop') this.cropStart = { x, y };
+                else if (this.mode === 'scale') {
                     if (!this.scale.p1) this.scale.p1 = { x, y };
                     else if (!this.scale.p2) this.scale.p2 = { x, y };
                     else { this.scale.p1 = { x, y }; this.scale.p2 = null; }
-                } else if (this.mode === 'poa') {
-                    if (this.activeGroup.isVirtual) return; 
-                    this.activeGroup.poa = { x, y };
-                } else if (this.mode === 'hit' && !this.pendingHit) {
-                    if (this.activeGroup.isVirtual) return; 
-                    this.pendingHit = { x, y };
-                    document.getElementById('confirm-dialog').classList.remove('hidden');
+                } else if (this.mode === 'poa') { if (!this.activeGroup.isVirtual) this.activeGroup.poa = { x, y }; }
+                else if (this.mode === 'hit' && !this.pendingHit) {
+                    if (!this.activeGroup.isVirtual) { this.pendingHit = { x, y }; document.getElementById('confirm-dialog').classList.remove('hidden'); }
                 } else if (this.mode === 'adjust') {
-                    if (this.activeGroup.isVirtual) return;
-                    const hit = this.activeGroup.hits.find(h => Math.hypot(h.x - x, h.y - y) < 20);
-                    if (hit) this.draggingHit = hit;
+                    if (!this.activeGroup.isVirtual) { const hit = this.activeGroup.hits.find(h => Math.hypot(h.x - x, h.y - y) < 20); if (hit) this.draggingHit = hit; }
                 }
                 this.draw();
             }
@@ -237,28 +197,13 @@
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
                 document.getElementById('ch-v').style.left = x + 'px';
                 document.getElementById('ch-h').style.top = y + 'px';
-
                 if (this.mode === 'crop' && this.cropStart) {
-                    this.cropRect = { 
-                        x: Math.min(x, this.cropStart.x), 
-                        y: Math.min(y, this.cropStart.y),
-                        w: Math.abs(x - this.cropStart.x),
-                        h: Math.abs(y - this.cropStart.y)
-                    };
+                    this.cropRect = { x: Math.min(x, this.cropStart.x), y: Math.min(y, this.cropStart.y), w: Math.abs(x - this.cropStart.x), h: Math.abs(y - this.cropStart.y) };
                     this.draw();
-                } else if (this.mode === 'adjust' && this.draggingHit) {
-                    this.draggingHit.x = x;
-                    this.draggingHit.y = y;
-                    this.draw();
-                }
+                } else if (this.mode === 'adjust' && this.draggingHit) { this.draggingHit.x = x; this.draggingHit.y = y; this.draw(); }
             }
 
-            onMouseUp() {
-                if (this.mode === 'crop' && this.cropRect && this.cropRect.w > 10) this.finalizeCrop();
-                this.cropStart = null;
-                this.draggingHit = null;
-                this.draw();
-            }
+            onMouseUp() { if (this.mode === 'crop' && this.cropRect && this.cropRect.w > 10) this.finalizeCrop(); this.cropStart = null; this.draggingHit = null; this.draw(); }
 
             finalizeCrop() {
                 const off = document.createElement('canvas');
@@ -267,150 +212,48 @@
                 const octx = off.getContext('2d');
                 octx.drawImage(this.canvas, this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h, 0, 0, off.width, off.height);
                 const ni = new Image();
-                ni.onload = () => {
-                    this.croppedImg = ni;
-                    this.cropRect = null;
-                    this.resetData();
-                    this.resizeCanvas();
-                    this.draw();
-                };
+                ni.onload = () => { this.croppedImg = ni; this.cropRect = null; this.resetData(); this.resizeCanvas(); this.draw(); };
                 ni.src = off.toDataURL();
             }
 
-            resetData() {
-                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
-                this.scale = { p1: null, p2: null };
-            }
-
-            confirmHit() {
-                if (this.pendingHit) {
-                    this.activeGroup.hits.push(this.pendingHit);
-                    this.pendingHit = null;
-                    document.getElementById('confirm-dialog').classList.add('hidden');
-                    this.draw();
-                    this.renderUI();
-                }
-            }
-
-            cancelHit() {
-                this.pendingHit = null;
-                document.getElementById('confirm-dialog').classList.add('hidden');
-                this.draw();
-            }
-
-            setMode(m) {
-                this.mode = m;
-                document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400'));
-                document.getElementById(`mode-${m}`).classList.add('bg-red-900/20', 'border-red-500/50', 'text-red-400');
-            }
-
-            toggleView() {
-                this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis';
-                document.getElementById('view-analysis').classList.toggle('hidden');
-                document.getElementById('view-result').classList.toggle('hidden');
-                document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Trefferbild anzeigen" : "Zurück zur Analyse";
-                if (this.viewMode === 'result') this.drawResult();
-            }
-
-            toggleCrosshair(s) {
-                const d = s && this.viewMode === 'analysis' ? 'block' : 'none';
-                document.getElementById('ch-v').style.display = d;
-                document.getElementById('ch-h').style.display = d;
-            }
-
-            addGroup() {
-                this.groups.forEach(g => g.active = false);
-                this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false });
-                this.draw(); this.renderUI();
-            }
-
-            selectGroup(id) {
-                this.groups.forEach(g => g.active = (g.id === id));
-                this.draw(); this.renderUI();
-            }
-
-            toggleSelection(id) {
-                const g = this.groups.find(x => x.id === id);
-                if (g) g.selected = !g.selected;
-                this.renderUI();
-            }
-
-            requestMerge() {
-                const selectedCount = this.groups.filter(g => g.selected).length;
-                if (selectedCount < 2) return;
-                document.getElementById('merge-confirm').classList.remove('hidden');
-            }
-
+            resetData() { this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }]; this.scale = { p1: null, p2: null }; }
+            confirmHit() { if (this.pendingHit) { this.activeGroup.hits.push(this.pendingHit); this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); this.renderUI(); } }
+            cancelHit() { this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); }
+            setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400')); document.getElementById(`mode-${m}`).classList.add('bg-red-900/20', 'border-red-500/50', 'text-red-400'); }
+            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Trefferbild anzeigen" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
+            toggleCrosshair(s) { const d = s && this.viewMode === 'analysis' ? 'block' : 'none'; document.getElementById('ch-v').style.display = d; document.getElementById('ch-h').style.display = d; }
+            addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false }); this.draw(); this.renderUI(); }
+            selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
+            toggleSelection(id) { const g = this.groups.find(x => x.id === id); if (g) g.selected = !g.selected; this.renderUI(); }
+            requestMerge() { if (this.groups.filter(g => g.selected).length >= 2) document.getElementById('merge-confirm').classList.remove('hidden'); }
             finalizeMerge() {
                 const selectedGroups = this.groups.filter(g => g.selected);
                 const allHits = selectedGroups.flatMap(g => g.hits);
                 const firstPoa = selectedGroups.find(g => g.poa)?.poa || null;
-
-                const virtualGroup = {
-                    id: Date.now(),
-                    name: `Verbund (${selectedGroups.length} El.)`,
-                    hits: JSON.parse(JSON.stringify(allHits)),
-                    poa: firstPoa ? JSON.parse(JSON.stringify(firstPoa)) : null,
-                    active: true,
-                    selected: false,
-                    isVirtual: true
-                };
-
+                const virtualGroup = { id: Date.now(), name: `Verbund (${selectedGroups.length} El.)`, hits: JSON.parse(JSON.stringify(allHits)), poa: firstPoa ? JSON.parse(JSON.stringify(firstPoa)) : null, active: true, selected: false, isVirtual: true };
                 this.groups.forEach(g => { g.active = false; g.selected = false; });
                 this.groups.push(virtualGroup);
-                
-                document.getElementById('merge-confirm').classList.add('hidden');
-                this.draw();
-                this.renderUI();
+                document.getElementById('merge-confirm').classList.add('hidden'); this.draw(); this.renderUI();
             }
 
-            getPercentile(arr, p) {
-                if (arr.length === 0) return 0;
-                const sorted = [...arr].sort((a, b) => a - b);
-                const pos = (sorted.length - 1) * p;
-                const base = Math.floor(pos);
-                const rest = pos - base;
-                return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base + 1] - sorted[base]) : sorted[base];
-            }
+            getPercentile(arr, p) { if (arr.length === 0) return 0; const s = [...arr].sort((a, b) => a - b); const pos = (s.length - 1) * p; const b = Math.floor(pos); const r = pos - b; return s[b+1] !== undefined ? s[b] + r * (s[b+1] - s[b]) : s[b]; }
 
             calculateStats(hits, poa) {
                 if (hits.length < 1) return null;
                 const mmp = this.mmPerPixel;
                 const distM = parseFloat(document.getElementById('distance').value) || 100;
-                
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
-                
-                let es = 0;
-                if (hits.length > 1) {
-                    for(let i=0; i<hits.length; i++) 
-                        for(let j=i+1; j<hits.length; j++) 
-                            es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y));
-                }
-
+                let es = 0; if (hits.length > 1) { for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y)); }
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length;
-                
-                let r50 = 0, r95 = 0;
+                let r50 = 0, r95 = 0; if (poa) { const d = hits.map(h => Math.hypot(h.x - poa.x, h.y - poa.y)); r50 = this.getPercentile(d, 0.5); r95 = this.getPercentile(d, 0.95); }
+                let vector = "--", clicks = "--", dx = 0, dy = 0;
                 if (poa) {
-                    const distances = hits.map(h => Math.hypot(h.x - poa.x, h.y - poa.y));
-                    r50 = this.getPercentile(distances, 0.5);
-                    r95 = this.getPercentile(distances, 0.95);
-                }
-
-                let vector = "--", clicks = "--";
-                let dx = 0, dy = 0;
-                if (poa) {
-                    dx = (coi.x - poa.x) * mmp; // mm rechts
-                    dy = (poa.y - coi.y) * mmp; // mm hoch (Y invertiert)
+                    dx = (coi.x - poa.x) * mmp; dy = (poa.y - coi.y) * mmp;
                     vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
-                    
-                    const mmPerClick = distM * 0.1; // 1cm auf 100m
-                    const cx = Math.round(dx / mmPerClick);
-                    const cy = Math.round(dy / mmPerClick);
-                    
-                    // Korrektur: Wenn Treffer zu weit Rechts (+dx) -> Dial Left (L). Wenn zu Hoch (+dy) -> Dial Down (Tief).
-                    clicks = `${cx > 0 ? 'L' : 'R'}${Math.abs(cx)} / ${cy > 0 ? 'T' : 'H'}${Math.abs(cy)}`;
+                    const mmC = distM * 0.1; const cx = Math.round(dx / mmC); const cy = Math.round(dy / mmC);
+                    // Vertikal (U/D) zuerst, dann Horizontal (L/R)
+                    clicks = `${cy > 0 ? 'D' : 'U'}${Math.abs(cy)} / ${cx > 0 ? 'L' : 'R'}${Math.abs(cx)}`;
                 }
-
                 return { es: (es*mmp).toFixed(2), mr: (mr*mmp).toFixed(2), r50: (r50*mmp).toFixed(2), r95: (r95*mmp).toFixed(2), vector, clicks, coi, dx, dy };
             }
 
@@ -418,219 +261,68 @@
                 if (this.viewMode === 'result') return;
                 this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
                 if (this.croppedImg) this.ctx.drawImage(this.croppedImg, 0,0,this.canvas.width,this.canvas.height);
-
-                if (this.cropRect) {
-                    this.ctx.strokeStyle = '#fff'; this.ctx.setLineDash([5,5]);
-                    this.ctx.strokeRect(this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h);
-                    this.ctx.setLineDash([]);
-                }
-
-                const mmp = this.mmPerPixel;
-                const calPix = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
-
-                if (this.scale.p1) {
-                    this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath();
-                    this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2);
-                    if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); }
-                    this.ctx.stroke();
-                }
-
+                if (this.cropRect) { this.ctx.strokeStyle = '#fff'; this.ctx.setLineDash([5,5]); this.ctx.strokeRect(this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h); this.ctx.setLineDash([]); }
+                const mmp = this.mmPerPixel; const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
+                if (this.scale.p1) { this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2); if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); } this.ctx.stroke(); }
                 this.groups.forEach(g => {
-                    const isA = g.active;
-                    const color = isA ? '#ef4444' : 'rgba(82, 82, 91, 0.4)';
-                    const poaColor = isA ? '#22c55e' : 'rgba(34, 197, 94, 0.2)';
-
-                    g.hits.forEach(h => {
-                        this.ctx.strokeStyle = color; this.ctx.beginPath();
-                        this.ctx.arc(h.x, h.y, calPix/2, 0, Math.PI*2);
-                        this.ctx.stroke();
-                    });
-                    if (g.poa) {
-                        this.ctx.strokeStyle = poaColor; this.ctx.beginPath();
-                        this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y);
-                        this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10);
-                        this.ctx.stroke();
-                    }
+                    const color = g.active ? '#ef4444' : 'rgba(82, 82, 91, 0.4)'; const poaC = g.active ? '#22c55e' : 'rgba(34, 197, 94, 0.2)';
+                    g.hits.forEach(h => { this.ctx.strokeStyle = color; this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
+                    if (g.poa) { this.ctx.strokeStyle = poaC; this.ctx.beginPath(); this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); }
                 });
-
-                if (this.pendingHit) {
-                    this.ctx.strokeStyle = '#facc15'; this.ctx.beginPath();
-                    this.ctx.arc(this.pendingHit.x, this.pendingHit.y, calPix/2, 0, Math.PI*2);
-                    this.ctx.stroke();
-                }
-
+                if (this.pendingHit) { this.ctx.strokeStyle = '#facc15'; this.ctx.beginPath(); this.ctx.arc(this.pendingHit.x, this.pendingHit.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); }
                 this.updateStats();
             }
 
             updateStats() {
-                const stats = this.calculateStats(this.activeGroup?.hits || [], this.activeGroup?.poa);
-                const panel = document.getElementById('stats-panel');
-                if (stats) {
-                    panel.classList.remove('hidden');
-                    document.getElementById('stats-content').innerHTML = `
-                        <div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${stats.es} mm</span></div>
-                        <div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${stats.mr} mm</span></div>
-                        <div class="flex justify-between"><span>R50:</span> <span>${stats.r50} mm</span></div>
-                        <div class="flex justify-between"><span>R95:</span> <span>${stats.r95} mm</span></div>
-                        <div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${stats.vector}</span></div>
-                        <div class="mt-2 text-red-400 font-bold border border-red-500/20 p-2 bg-red-500/5 rounded">Korrektur (0.1 MIL): ${stats.clicks}</div>
-                    `;
-                } else panel.classList.add('hidden');
+                const s = this.calculateStats(this.activeGroup?.hits || [], this.activeGroup?.poa);
+                const p = document.getElementById('stats-panel');
+                if (s) {
+                    p.classList.remove('hidden');
+                    document.getElementById('stats-content').innerHTML = `<div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${s.es} mm</span></div><div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${s.mr} mm</span></div><div class="flex justify-between"><span>R50:</span> <span>${s.r50} mm</span></div><div class="flex justify-between"><span>R95:</span> <span>${s.r95} mm</span></div><div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div><div class="mt-2 text-red-400 font-bold border border-red-500/20 p-2 bg-red-500/5 rounded">Korrektur (0.1 MIL): ${s.clicks}</div>`;
+                } else p.classList.add('hidden');
             }
 
             drawResult() {
-                const ctx = this.resCtx;
-                const w = this.resCanvas.width, h = this.resCanvas.height;
-                const center = { x: w/2 - 50, y: h/2 }; // Leicht verschoben für Seitenleiste
-                
-                // Hintergrund
+                const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 50, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                
-                // Gitter und Ringe
-                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
-                for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
-                
-                // Achsen (Haltepunkt)
-                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
-
-                const group = this.activeGroup;
-                if (!group || group.hits.length === 0 || !group.poa) {
-                    ctx.fillStyle = '#ef4444'; ctx.font = 'bold 16px Inter';
-                    ctx.fillText("HALTEPUNKT ODER MESSDATEN FEHLEN", 20, 40);
-                    return;
-                }
-
-                const plotScale = 2; 
-                const mmp = this.mmPerPixel;
-                const calMm = parseFloat(document.getElementById('caliber').value) || 5.56;
-                const stats = this.calculateStats(group.hits, group.poa);
-
-                // Radien
-                ctx.setLineDash([5, 5]);
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath();
-                ctx.arc(center.x, center.y, parseFloat(stats.r95) * plotScale, 0, Math.PI*2); ctx.stroke();
-                ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; ctx.beginPath();
-                ctx.arc(center.x, center.y, parseFloat(stats.r50) * plotScale, 0, Math.PI*2); ctx.stroke();
-                ctx.setLineDash([]);
-
-                // Treffer zeichnen
+                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1; for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
+                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
+                const group = this.activeGroup; if (!group || group.hits.length === 0 || !group.poa) { ctx.fillStyle = '#ef4444'; ctx.font = 'bold 16px Inter'; ctx.fillText("HALTEPUNKT ODER MESSDATEN FEHLEN", 20, 40); return; }
+                const plotS = 2; const mmp = this.mmPerPixel; const calM = parseFloat(document.getElementById('caliber').value) || 5.56; const s = this.calculateStats(group.hits, group.poa);
+                ctx.setLineDash([5, 5]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath(); ctx.arc(center.x, center.y, parseFloat(s.r95) * plotS, 0, Math.PI*2); ctx.stroke(); ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; ctx.beginPath(); ctx.arc(center.x, center.y, parseFloat(s.r50) * plotS, 0, Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
                 group.hits.forEach((hit, idx) => {
-                    const dx_mm = (hit.x - group.poa.x) * mmp;
-                    const dy_mm = (hit.y - group.poa.y) * mmp;
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
-                    ctx.beginPath();
-                    ctx.arc(center.x + dx_mm * plotScale, center.y + dy_mm * plotScale, (calMm/2) * plotScale, 0, Math.PI*2);
-                    ctx.fill();
-                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.stroke();
-                    
-                    ctx.fillStyle = '#fff'; ctx.font = '9px Inter';
-                    ctx.fillText(idx+1, center.x + dx_mm * plotScale + 5, center.y + dy_mm * plotScale - 5);
+                    const dx_mm = (hit.x - group.poa.x) * mmp; const dy_mm = (hit.y - group.poa.y) * mmp; ctx.fillStyle = 'rgba(239, 68, 68, 0.6)'; ctx.beginPath(); ctx.arc(center.x + dx_mm * plotS, center.y + dy_mm * plotS, (calM/2) * plotS, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.font = '9px Inter'; ctx.fillText(idx+1, center.x + dx_mm * plotS + 5, center.y + dy_mm * plotS - 5);
                 });
-
-                // --- Statistik-Block (Rechts integriert) ---
-                const sx = w - 240, sy = 40;
-                ctx.fillStyle = 'rgba(24, 24, 27, 0.9)'; ctx.fillRect(sx, sy, 220, 240);
-                ctx.strokeStyle = '#ef4444'; ctx.strokeRect(sx, sy, 220, 240);
-                
-                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 12px Inter';
-                ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
-                
-                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter';
-                ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50);
-                ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65);
-                ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
-
-                const data = [
-                    ["Extremstreuung (ES)", stats.es + " mm"],
-                    ["Mittlerer Radius (MR)", stats.mr + " mm"],
-                    ["R50 (Zentral)", stats.r50 + " mm"],
-                    ["R95 (95% Vertr.)", stats.r95 + " mm"],
-                    ["Abweichung X/Y", stats.vector]
-                ];
-
-                data.forEach((item, i) => {
-                    ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20));
-                    ctx.fillStyle = '#fff'; ctx.textAlign = "right";
-                    ctx.fillText(item[1], sx + 205, sy + 110 + (i*20));
-                    ctx.textAlign = "left";
-                });
-
-                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter';
-                ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 215);
-                ctx.font = 'bold 14px Inter';
-                ctx.fillText(stats.clicks, sx + 15, sy + 232);
-
-                // Metadaten
-                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter';
-                ctx.fillText(`Erzeugt mit ShotAnalyst v6.5 | Maßstab: 100mm = ${100 * plotScale}px`, 20, h - 20);
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.9)'; ctx.fillRect(sx, sy, 220, 240); ctx.strokeStyle = '#ef4444'; ctx.strokeRect(sx, sy, 220, 240);
+                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
+                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65); ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
+                const data = [ ["Extremstreuung (ES)", s.es + " mm"], ["Mittlerer Radius (MR)", s.mr + " mm"], ["R50 (Zentral)", s.r50 + " mm"], ["R95 (95% Vertr.)", s.r95 + " mm"], ["Abweichung X/Y", s.vector] ];
+                data.forEach((item, i) => { ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20)); ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 110 + (i*20)); ctx.textAlign = "left"; });
+                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 215); ctx.font = 'bold 14px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 232);
+                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter'; ctx.fillText(`Erzeugt mit ShotAnalyst v6.6 | Maßstab: 100mm = ${100 * plotS}px`, 20, h - 20);
             }
 
-            savePlot() {
-                if (this.viewMode !== 'result') this.toggleView();
-                const link = document.createElement('a');
-                link.download = `ShotAnalyst_Report_${this.activeGroup.name}.png`;
-                link.href = this.resCanvas.toDataURL("image/png");
-                link.click();
-            }
+            savePlot() { if (this.viewMode !== 'result') this.toggleView(); const link = document.createElement('a'); link.download = `ShotAnalyst_Report_${this.activeGroup.name}.png`; link.href = this.resCanvas.toDataURL("image/png"); link.click(); }
 
             renderUI() {
-                const list = document.getElementById('groupList');
-                list.innerHTML = '';
+                const list = document.getElementById('groupList'); list.innerHTML = '';
                 this.groups.forEach(g => {
-                    const d = document.createElement('div');
-                    d.className = `flex items-center gap-2 p-1 rounded transition group ${g.active ? 'bg-red-500/5 ring-1 ring-red-500/30' : ''}`;
-                    
-                    const cb = document.createElement('input');
-                    cb.type = 'checkbox';
-                    cb.className = 'w-4 h-4 rounded-full border-zinc-700 bg-zinc-800 text-red-600 focus:ring-0 cursor-pointer';
-                    cb.checked = g.selected;
-                    cb.onchange = () => this.toggleSelection(g.id);
-
-                    const label = document.createElement('div');
-                    label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center transition ${g.active ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800'}`;
+                    const d = document.createElement('div'); d.className = `flex items-center gap-2 p-1 rounded transition group ${g.active ? 'bg-red-500/5 ring-1 ring-red-500/30' : ''}`;
+                    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'w-4 h-4 rounded-full border-zinc-700 bg-zinc-800 text-red-600 focus:ring-0 cursor-pointer'; cb.checked = g.selected; cb.onchange = () => this.toggleSelection(g.id);
+                    const label = document.createElement('div'); label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center transition ${g.active ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800'}`;
                     label.onclick = () => this.selectGroup(g.id);
-                    label.innerHTML = `
-                        <div class="flex flex-col">
-                            <span class="text-xs font-bold ${g.isVirtual ? 'text-amber-500' : ''}">${g.name}</span>
-                            <span class="text-[9px] uppercase text-zinc-500 tracking-tighter">${g.hits.length} Messwerte</span>
-                        </div>
-                        <button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 transition px-1">✕</button>
-                    `;
-                    
-                    d.appendChild(cb);
-                    d.appendChild(label);
-                    list.appendChild(d);
+                    label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold ${g.isVirtual ? 'text-amber-500' : ''}">${g.name}</span><span class="text-[9px] uppercase text-zinc-500 tracking-tighter">${g.hits.length} Messwerte</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 transition px-1">✕</button>`;
+                    d.appendChild(cb); d.appendChild(label); list.appendChild(d);
                 });
-
-                const selectedCount = this.groups.filter(g => g.selected).length;
-                document.getElementById('mergeBtn').classList.toggle('hidden', selectedCount < 2);
+                document.getElementById('mergeBtn').classList.toggle('hidden', this.groups.filter(g => g.selected).length < 2);
             }
 
-            deleteGroup(id) {
-                if (this.groups.length > 1) {
-                    this.groups = this.groups.filter(g => g.id !== id);
-                    if (!this.activeGroup) this.groups[0].active = true;
-                    this.draw(); this.renderUI();
-                }
-            }
-
+            deleteGroup(id) { if (this.groups.length > 1) { this.groups = this.groups.filter(g => g.id !== id); if (!this.activeGroup) this.groups[0].active = true; this.draw(); this.renderUI(); } }
             undo() { if (this.activeGroup && !this.activeGroup.isVirtual && this.activeGroup.hits.length > 0) { this.activeGroup.hits.pop(); this.draw(); this.renderUI(); } }
-
             exportCSV() {
                 let c = "Bezeichnung;Typ;n;X_rel_mm;Y_rel_mm\n";
-                this.groups.forEach(g => {
-                    const poa = g.poa || {x:0, y:0};
-                    g.hits.forEach((h,i) => {
-                        const dx = (h.x - poa.x) * this.mmPerPixel;
-                        const dy = (poa.y - h.y) * this.mmPerPixel;
-                        c += `${g.name};${g.isVirtual?'Verbund':'Standard'};${i+1};${dx.toFixed(4)};${dy.toFixed(4)}\n`;
-                    });
-                });
-                const b = new Blob([c], {type:'text/csv'});
-                const u = URL.createObjectURL(b);
-                const a = document.createElement('a'); a.href = u; a.download = 'ShotAnalyst_Export.csv'; a.click();
+                this.groups.forEach(g => { const poa = g.poa || {x:0, y:0}; g.hits.forEach((h,i) => { const dx = (h.x - poa.x) * this.mmPerPixel; const dy = (poa.y - h.y) * this.mmPerPixel; c += `${g.name};${g.isVirtual?'Verbund':'Standard'};${i+1};${dx.toFixed(4)};${dy.toFixed(4)}\n`; }); });
+                const b = new Blob([c], {type:'text/csv'}); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'ShotAnalyst_Export.csv'; a.click();
             }
         }
         const app = new ShotAnalyst();
