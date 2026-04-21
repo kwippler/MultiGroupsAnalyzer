@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.7</title>
+    <title>ShotAnalyst v6.8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -22,13 +22,13 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.7</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.8</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
                 <!-- Systemparameter -->
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Systemparameter</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
                     <div class="space-y-3">
                         <button onclick="document.getElementById('fileInput').click()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-sm py-2 rounded transition border border-zinc-700">Bild laden</button>
                         <input type="file" id="fileInput" class="hidden" accept="image/*">
@@ -54,7 +54,7 @@
 
                 <!-- Arbeitsmodi -->
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Arbeitsmodi</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
                         <button id="mode-crop" onclick="app.setMode('crop')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Zuschneiden</button>
                         <button id="mode-scale" onclick="app.setMode('scale')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Skalierung</button>
@@ -68,7 +68,7 @@
                 <!-- Gruppenverwaltung -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppenverwaltung</h2>
+                        <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
                         <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-lg font-bold">+</button>
                     </div>
                     <div id="groupList" class="space-y-2"></div>
@@ -94,7 +94,7 @@
                     <div id="ch-h" class="absolute left-0 w-full h-[1px] bg-red-500/30 pointer-events-none hidden"></div>
                     
                     <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-red-500 p-2 rounded shadow-xl hidden flex gap-2 z-50">
-                        <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Treffer Bestätigen</button>
+                        <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Bestätigen</button>
                         <button onclick="app.cancelHit()" class="bg-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Abbruch</button>
                     </div>
 
@@ -241,26 +241,43 @@
                 document.getElementById('merge-confirm').classList.add('hidden'); this.draw(); this.renderUI();
             }
 
-            getPercentile(arr, p) { if (arr.length === 0) return 0; const s = [...arr].sort((a, b) => a - b); const pos = (s.length - 1) * p; const b = Math.floor(pos); const r = pos - b; return s[b+1] !== undefined ? s[b] + r * (s[b+1] - s[b]) : s[b]; }
+            getPercentile(arr, p) { 
+                if (arr.length === 0) return 0; 
+                const s = [...arr].sort((a, b) => a - b); 
+                const index = p * (s.length - 1);
+                const low = Math.floor(index);
+                const high = Math.ceil(index);
+                if (low === high) return s[low];
+                return s[low] + (s[high] - s[low]) * (index - low);
+            }
 
             calculateStats(hits, poa) {
                 if (hits.length < 1) return null;
                 const mmp = this.mmPerPixel;
                 const distM = parseFloat(document.getElementById('distance').value) || 100;
+                
+                // Treffpunktzentrum (COI/TPZ) in Bildkoordinaten
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
+                
+                // Extremstreuung (ES)
                 let es = 0; if (hits.length > 1) { for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y)); }
+                
+                // Mittlerer Radius (MR)
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length;
                 
-                // Radien relativ zum TPZ (Treffpunktzentrum)
+                // Statistische Radien relativ zum TPZ
                 const distsToCoi = hits.map(h => Math.hypot(h.x - coi.x, h.y - coi.y));
                 const r50 = this.getPercentile(distsToCoi, 0.5);
                 const r95 = this.getPercentile(distsToCoi, 0.95);
 
                 let vector = "--", clicks = "--", dx = 0, dy = 0;
                 if (poa) {
-                    dx = (coi.x - poa.x) * mmp; dy = (poa.y - coi.y) * mmp;
+                    dx = (coi.x - poa.x) * mmp; 
+                    dy = (poa.y - coi.y) * mmp;
                     vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
-                    const mmC = distM * 0.1; const cx = Math.round(dx / mmC); const cy = Math.round(dy / mmC);
+                    const mmC = distM * 0.1; 
+                    const cx = Math.round(dx / mmC); 
+                    const cy = Math.round(dy / mmC);
                     clicks = `${cy > 0 ? 'D' : 'U'}${Math.abs(cy)} / ${cx > 0 ? 'L' : 'R'}${Math.abs(cx)}`;
                 }
                 return { es: (es*mmp).toFixed(2), mr: (mr*mmp).toFixed(2), r50: (r50*mmp).toFixed(2), r95: (r95*mmp).toFixed(2), vector, clicks, coi, dx, dy, r50px: r50, r95px: r95 };
@@ -276,14 +293,12 @@
                 const mmp = this.mmPerPixel; 
                 const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
                 
-                // Skalierungslinie
                 if (this.scale.p1) { 
                     this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2); 
                     if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); } 
                     this.ctx.stroke(); 
                 }
 
-                // Gruppen zeichnen
                 this.groups.forEach(g => {
                     const color = g.active ? '#ef4444' : 'rgba(82, 82, 91, 0.4)'; 
                     const poaC = g.active ? '#22c55e' : 'rgba(34, 197, 94, 0.2)';
@@ -296,7 +311,6 @@
                         this.ctx.strokeStyle = poaC; this.ctx.beginPath(); this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); 
                     }
 
-                    // Live TPZ und R50 für aktive Gruppe
                     if (g.active && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g.poa);
                         if (s) {
@@ -306,8 +320,6 @@
                             this.ctx.arc(s.coi.x, s.coi.y, s.r50px, 0, Math.PI*2);
                             this.ctx.stroke();
                             this.ctx.setLineDash([]);
-                            
-                            // TPZ Markierung
                             this.ctx.fillStyle = '#ef4444';
                             this.ctx.beginPath();
                             this.ctx.arc(s.coi.x, s.coi.y, 2, 0, Math.PI*2);
@@ -325,16 +337,15 @@
                 const p = document.getElementById('stats-panel');
                 if (s) {
                     p.classList.remove('hidden');
-                    document.getElementById('stats-content').innerHTML = `<div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${s.es} mm</span></div><div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${s.mr} mm</span></div><div class="flex justify-between"><span>R50 (Zentral):</span> <span>${s.r50} mm</span></div><div class="flex justify-between"><span>R95 (Vertr.):</span> <span>${s.r95} mm</span></div><div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div><div class="mt-2 text-red-400 font-bold border border-red-500/20 p-2 bg-red-500/5 rounded">Korrektur (0.1 MIL): ${s.clicks}</div>`;
+                    document.getElementById('stats-content').innerHTML = `<div class="flex justify-between"><span>Extremstreuung (ES):</span> <span>${s.es} mm</span></div><div class="flex justify-between"><span>Mittlerer Radius (MR):</span> <span>${s.mr} mm</span></div><div class="flex justify-between"><span>R50 (Zentral):</span> <span>${s.r50} mm</span></div><div class="flex justify-between"><span>R95 (Vertr.):</span> <span>${s.r95} mm</span></div><div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div><div class="mt-2 text-red-400 font-bold border border-red-500/20 p-2 bg-red-500/5 rounded text-center">Korrektur (0.1 MIL): ${s.clicks}</div>`;
                 } else p.classList.add('hidden');
             }
 
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 50, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1; for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
                 
-                // Achsenkreuz (Haltepunkt / POA)
+                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1; for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
                 ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 
                 const group = this.activeGroup; 
@@ -342,9 +353,9 @@
                 
                 const plotS = 2; const mmp = this.mmPerPixel; const calM = parseFloat(document.getElementById('caliber').value) || 5.56; const s = this.calculateStats(group.hits, group.poa);
                 
-                // TPZ Position auf dem Plot (relativ zum POA im Zentrum)
-                const coiX = center.x + (s.coi.x - group.poa.x) * plotS;
-                const coiY = center.y + (s.coi.y - group.poa.y) * plotS;
+                // Zentrumsberechnung basierend auf skalierten Werten (WICHTIG: Transformation Bild -> mm -> Plot)
+                const coiX = center.x + s.dx * plotS;
+                const coiY = center.y - s.dy * plotS;
 
                 // Statistische Radien zentriert auf TPZ
                 ctx.setLineDash([5, 5]); 
@@ -352,29 +363,27 @@
                 ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * plotS, 0, Math.PI*2); ctx.stroke(); 
                 ctx.setLineDash([]);
 
-                // TPZ Markierung (Zentrum der Streuung)
                 ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(coiX, coiY, 3, 0, Math.PI*2); ctx.fill();
 
-                // Treffer zeichnen
                 group.hits.forEach((hit, idx) => {
                     const dx_mm = (hit.x - group.poa.x) * mmp; 
-                    const dy_mm = (hit.y - group.poa.y) * mmp; 
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.6)'; ctx.beginPath(); ctx.arc(center.x + dx_mm * plotS, center.y + dy_mm * plotS, (calM/2) * plotS, 0, Math.PI*2); ctx.fill(); 
+                    const dy_mm = (group.poa.y - hit.y) * mmp; 
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.6)'; ctx.beginPath(); 
+                    ctx.arc(center.x + dx_mm * plotS, center.y - dy_mm * plotS, (calM/2) * plotS, 0, Math.PI*2); ctx.fill(); 
                     ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.stroke(); 
-                    ctx.fillStyle = '#fff'; ctx.font = '9px Inter'; ctx.fillText(idx+1, center.x + dx_mm * plotS + 5, center.y + dy_mm * plotS - 5);
+                    ctx.fillStyle = '#fff'; ctx.font = '9px Inter'; ctx.fillText(idx+1, center.x + dx_mm * plotS + 5, center.y - dy_mm * plotS - 5);
                 });
 
-                // Analysebericht Block
                 const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.9)'; ctx.fillRect(sx, sy, 220, 240); ctx.strokeStyle = '#ef4444'; ctx.strokeRect(sx, sy, 220, 240);
                 ctx.fillStyle = '#ef4444'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65); ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
                 const data = [ ["Extremstreuung (ES)", s.es + " mm"], ["Mittlerer Radius (MR)", s.mr + " mm"], ["R50 (Zentralwert)", s.r50 + " mm"], ["R95 (95% Vertr.)", s.r95 + " mm"], ["Abweichung X/Y", s.vector] ];
                 data.forEach((item, i) => { ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20)); ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 110 + (i*20)); ctx.textAlign = "left"; });
                 ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 215); ctx.font = 'bold 14px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 232);
-                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter'; ctx.fillText(`Erzeugt mit ShotAnalyst v6.7 | Maßstab: 100mm = ${100 * plotS}px`, 20, h - 20);
+                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter'; ctx.fillText(`Erzeugt mit ShotAnalyst v6.8 | Maßstab: 100mm = ${100 * plotS}px`, 20, h - 20);
             }
 
-            savePlot() { if (this.viewMode !== 'result') this.toggleView(); const link = document.createElement('a'); link.download = `ShotAnalyst_Report_${this.activeGroup.name}.png`; link.href = this.resCanvas.toDataURL("image/png"); link.click(); }
+            savePlot() { if (this.viewMode !== 'result') this.toggleView(); const link = document.createElement('a'); link.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; link.href = this.resCanvas.toDataURL("image/png"); link.click(); }
 
             renderUI() {
                 const list = document.getElementById('groupList'); list.innerHTML = '';
