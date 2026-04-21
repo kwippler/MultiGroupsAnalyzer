@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.2 - Präzisionsgrafik</title>
+    <title>ShotAnalyst v6.2.1 - MIL-Korrektur</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -19,10 +19,9 @@
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
-        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.2</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.2.1</span></h1>
                 <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Statistische Prozesskontrolle</p>
             </div>
 
@@ -78,9 +77,7 @@
             </div>
         </aside>
 
-        <!-- Hauptanzeigebereich -->
         <main class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-            <!-- Analyse-Ansicht (Basiert auf Foto) -->
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
@@ -94,7 +91,6 @@
                 </div>
             </div>
 
-            <!-- Grafik-Ansicht (Statistische Plot-Darstellung) -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 800px; height: 800px;">
                     <canvas id="result-canvas" width="800" height="800"></canvas>
@@ -106,7 +102,6 @@
                 </div>
             </div>
             
-            <!-- Statistik-Overlay -->
             <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden">
                 <h3 class="text-xs font-bold text-red-500 uppercase mb-3 border-b border-zinc-700 pb-1">Statistik</h3>
                 <div id="stats-content" class="space-y-2 text-xs"></div>
@@ -124,7 +119,7 @@
                 
                 this.originalImg = null;
                 this.croppedImg = null;
-                this.viewMode = 'analysis'; // analysis | result
+                this.viewMode = 'analysis'; 
                 
                 this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true }];
                 this.scale = { p1: null, p2: null };
@@ -332,7 +327,6 @@
 
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length;
                 
-                // Berechnung der Radien relativ zum Haltepunkt (Systempräzision)
                 let r50 = 0, r95 = 0;
                 if (poa) {
                     const distances = hits.map(h => Math.hypot(h.x - poa.x, h.y - poa.y)).sort((a,b) => a-b);
@@ -344,7 +338,12 @@
                 if (poa) {
                     const dx = (coi.x - poa.x) * mmp, dy = (poa.y - coi.y) * mmp;
                     vector = `X:${dx.toFixed(1)} Y:${dy.toFixed(1)} mm`;
-                    const cx = Math.round(dx / (distM * 0.01)), cy = Math.round(dy / (distM * 0.01));
+                    
+                    // Korrekturberechnung: 1 Klick = 0.1 MIL = 1cm auf 100m.
+                    // 1 Klick (mm) = Distanz(m) * 0.1
+                    const mmPerClick = distM * 0.1;
+                    const cx = Math.round(dx / mmPerClick);
+                    const cy = Math.round(dy / mmPerClick);
                     clicks = `${cx>0?'R':'L'}${Math.abs(cx)} / ${cy>0?'H':'T'}${Math.abs(cy)}`;
                 }
 
@@ -411,7 +410,7 @@
                         <div class="flex justify-between"><span>R50:</span> <span>${stats.r50} mm</span></div>
                         <div class="flex justify-between"><span>R95:</span> <span>${stats.r95} mm</span></div>
                         <div class="flex justify-between"><span>Vektor:</span> <span>${stats.vector}</span></div>
-                        <div class="mt-2 pt-2 border-t border-zinc-800 text-red-400 font-bold">Korrektur: ${stats.clicks}</div>
+                        <div class="mt-2 pt-2 border-t border-zinc-800 text-red-400 font-bold">Korrektur (0.1 MIL): ${stats.clicks}</div>
                     `;
                 } else panel.classList.add('hidden');
             }
@@ -423,11 +422,9 @@
                 
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
                 
-                // Wirkungsbereich (Schematisch)
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
                 
-                // Großes Fadenkreuz (POA)
                 ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(w, center.y); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
@@ -441,13 +438,11 @@
                     return;
                 }
 
-                // Skalierungsfaktor für Plot: 100mm = 200px
                 const plotScale = 2; 
                 const mmp = this.mmPerPixel;
                 const calMm = parseFloat(document.getElementById('caliber').value) || 7.62;
                 const stats = this.calculateStats(hits, poa);
 
-                // R95 & R50 zeichnen
                 ctx.setLineDash([5, 5]);
                 ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath();
                 ctx.arc(center.x, center.y, parseFloat(stats.r95) * plotScale, 0, Math.PI*2); ctx.stroke();
@@ -456,7 +451,6 @@
                 ctx.arc(center.x, center.y, parseFloat(stats.r50) * plotScale, 0, Math.PI*2); ctx.stroke();
                 ctx.setLineDash([]);
 
-                // Treffer plotten
                 hits.forEach(hit => {
                     const dx_mm = (hit.x - poa.x) * mmp;
                     const dy_mm = (hit.y - poa.y) * mmp;
@@ -468,7 +462,6 @@
                     ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.stroke();
                 });
 
-                // Beschriftung
                 ctx.fillStyle = '#71717a'; ctx.font = '10px monospace';
                 ctx.fillText(`Masstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
                 ctx.fillText(`System-ES: ${stats.es} mm`, 10, h - 40);
