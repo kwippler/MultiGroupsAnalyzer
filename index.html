@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.4 - Präzisionsmesstechnik</title>
+    <title>ShotAnalyst v6.4.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -23,8 +23,7 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.4</span></h1>
-                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Präzisionsmesstechnik</p>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.4.1</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -43,12 +42,12 @@
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-zinc-500 uppercase">Referenz (mm)</label>
-                                    <input type="number" id="refMm" value="25" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                                    <input type="number" id="refMm" value="20" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
                                 </div>
                             </div>
                             <div>
                                 <label class="text-[10px] text-zinc-500 uppercase">Geschoss-Ø (mm)</label>
-                                <input type="number" id="caliber" value="7.62" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                                <input type="number" id="caliber" value="5.56" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
                             </div>
                         </div>
                     </div>
@@ -166,7 +165,7 @@
             get mmPerPixel() {
                 if (!this.scale.p1 || !this.scale.p2) return 1;
                 const pixDist = Math.hypot(this.scale.p1.x - this.scale.p2.x, this.scale.p1.y - this.scale.p2.y);
-                const ref = parseFloat(document.getElementById('refMm').value) || 25;
+                const ref = parseFloat(document.getElementById('refMm').value) || 20;
                 return ref / pixDist;
             }
 
@@ -409,7 +408,6 @@
                     const cx = Math.round(dx / mmPerClick);
                     const cy = Math.round(dy / mmPerClick);
                     
-                    // Korrekturlogik: Treffpunkt rechts -> Klick nach links. Treffpunkt hoch -> Klick nach tief.
                     clicks = `${cx > 0 ? 'L' : 'R'}${Math.abs(cx)} / ${cy > 0 ? 'T' : 'H'}${Math.abs(cy)}`;
                 }
 
@@ -428,7 +426,7 @@
                 }
 
                 const mmp = this.mmPerPixel;
-                const calPix = (parseFloat(document.getElementById('caliber').value) || 7.62) / mmp;
+                const calPix = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
 
                 if (this.scale.p1) {
                     this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath();
@@ -502,7 +500,7 @@
 
                 const plotScale = 2; 
                 const mmp = this.mmPerPixel;
-                const calMm = parseFloat(document.getElementById('caliber').value) || 7.62;
+                const calMm = parseFloat(document.getElementById('caliber').value) || 5.56;
                 const stats = this.calculateStats(group.hits, group.poa);
 
                 ctx.setLineDash([5, 5]);
@@ -523,7 +521,7 @@
                 });
 
                 ctx.fillStyle = '#71717a'; ctx.font = '10px monospace';
-                ctx.fillText(`Masstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
+                ctx.fillText(`Maßstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
                 ctx.fillText(`${group.name.toUpperCase()} | n = ${group.hits.length}`, 10, 25);
                 ctx.fillText(`ES: ${stats.es} mm | R95: ${stats.r95} mm`, 10, 45);
             }
@@ -583,7 +581,7 @@
                 });
                 const b = new Blob([c], {type:'text/csv'});
                 const u = URL.createObjectURL(b);
-                const a = document.createElement('a'); a.href = u; a.download = 'Analyse_Export_v64.csv'; a.click();
+                const a = document.createElement('a'); a.href = u; a.download = 'Analyse_Export_v641.csv'; a.click();
             }
         }
         const app = new ShotAnalyst();
