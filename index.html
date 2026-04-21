@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.4.1</title>
+    <title>ShotAnalyst v6.5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -23,7 +23,7 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.4.1</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.5</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -83,7 +83,10 @@
 
             <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 space-y-2">
                 <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-semibold py-2 rounded border border-zinc-700 transition">Trefferbild anzeigen</button>
-                <button onclick="app.exportCSV()" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2 rounded transition">Export CSV</button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="app.exportCSV()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] py-2 rounded border border-zinc-700 uppercase">CSV Export</button>
+                    <button onclick="app.savePlot()" class="w-full bg-red-600 hover:bg-red-500 text-white text-[10px] py-2 rounded font-bold uppercase transition">Bild speichern</button>
+                </div>
             </div>
         </aside>
 
@@ -117,17 +120,12 @@
 
             <!-- Plot-Modus -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
-                <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 800px; height: 800px;">
-                    <canvas id="result-canvas" width="800" height="800"></canvas>
-                </div>
-                <div class="mt-4 flex gap-8 text-[10px] uppercase tracking-widest text-zinc-500">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-yellow-500/20 border border-yellow-500 rounded-full"></span> R50 (Zentralwert)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-red-500/10 border border-red-500 rounded-full"></span> R95 (95%-Bereich)</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-500 border border-green-500"></span> Haltepunkt (POA)</div>
+                <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
+                    <canvas id="result-canvas" width="850" height="850"></canvas>
                 </div>
             </div>
             
-            <!-- Statistik -->
+            <!-- Floating Statistics (nur Analyse-Ansicht) -->
             <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden">
                 <h3 class="text-xs font-bold text-red-500 uppercase mb-3 border-b border-zinc-700 pb-1">Analyseergebnisse</h3>
                 <div id="stats-content" class="space-y-2 text-xs"></div>
@@ -310,7 +308,7 @@
                 this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis';
                 document.getElementById('view-analysis').classList.toggle('hidden');
                 document.getElementById('view-result').classList.toggle('hidden');
-                document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Trefferbild anzeigen" : "Zurück zum Foto";
+                document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Trefferbild anzeigen" : "Zurück zur Analyse";
                 if (this.viewMode === 'result') this.drawResult();
             }
 
@@ -399,19 +397,21 @@
                 }
 
                 let vector = "--", clicks = "--";
+                let dx = 0, dy = 0;
                 if (poa) {
-                    const dx = (coi.x - poa.x) * mmp; // mm rechts
-                    const dy = (poa.y - coi.y) * mmp; // mm hoch (Y invertiert)
-                    vector = `X:${dx.toFixed(1)} Y:${dy.toFixed(1)} mm`;
+                    dx = (coi.x - poa.x) * mmp; // mm rechts
+                    dy = (poa.y - coi.y) * mmp; // mm hoch (Y invertiert)
+                    vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                     
                     const mmPerClick = distM * 0.1; // 1cm auf 100m
                     const cx = Math.round(dx / mmPerClick);
                     const cy = Math.round(dy / mmPerClick);
                     
+                    // Korrektur: Wenn Treffer zu weit Rechts (+dx) -> Dial Left (L). Wenn zu Hoch (+dy) -> Dial Down (Tief).
                     clicks = `${cx > 0 ? 'L' : 'R'}${Math.abs(cx)} / ${cy > 0 ? 'T' : 'H'}${Math.abs(cy)}`;
                 }
 
-                return { es: (es*mmp).toFixed(2), mr: (mr*mmp).toFixed(2), r50: (r50*mmp).toFixed(2), r95: (r95*mmp).toFixed(2), vector, clicks, coi };
+                return { es: (es*mmp).toFixed(2), mr: (mr*mmp).toFixed(2), r50: (r50*mmp).toFixed(2), r95: (r95*mmp).toFixed(2), vector, clicks, coi, dx, dy };
             }
 
             draw() {
@@ -481,20 +481,24 @@
             drawResult() {
                 const ctx = this.resCtx;
                 const w = this.resCanvas.width, h = this.resCanvas.height;
-                const center = { x: w/2, y: h/2 };
+                const center = { x: w/2 - 50, y: h/2 }; // Leicht verschoben für Seitenleiste
                 
+                // Hintergrund
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
+                
+                // Gitter und Ringe
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<400; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r, 0, Math.PI*2); ctx.stroke(); }
                 
+                // Achsen (Haltepunkt)
                 ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(w, center.y); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
 
                 const group = this.activeGroup;
                 if (!group || group.hits.length === 0 || !group.poa) {
-                    ctx.fillStyle = '#ef4444'; ctx.font = '14px monospace';
-                    ctx.fillText("HALTEPUNKT ODER DATEN FEHLEN", 20, 30);
+                    ctx.fillStyle = '#ef4444'; ctx.font = 'bold 16px Inter';
+                    ctx.fillText("HALTEPUNKT ODER MESSDATEN FEHLEN", 20, 40);
                     return;
                 }
 
@@ -503,6 +507,7 @@
                 const calMm = parseFloat(document.getElementById('caliber').value) || 5.56;
                 const stats = this.calculateStats(group.hits, group.poa);
 
+                // Radien
                 ctx.setLineDash([5, 5]);
                 ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.beginPath();
                 ctx.arc(center.x, center.y, parseFloat(stats.r95) * plotScale, 0, Math.PI*2); ctx.stroke();
@@ -510,20 +515,64 @@
                 ctx.arc(center.x, center.y, parseFloat(stats.r50) * plotScale, 0, Math.PI*2); ctx.stroke();
                 ctx.setLineDash([]);
 
-                group.hits.forEach(hit => {
+                // Treffer zeichnen
+                group.hits.forEach((hit, idx) => {
                     const dx_mm = (hit.x - group.poa.x) * mmp;
                     const dy_mm = (hit.y - group.poa.y) * mmp;
-                    ctx.fillStyle = group.isVirtual ? 'rgba(239, 68, 68, 0.4)' : 'rgba(239, 68, 68, 0.7)';
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
                     ctx.beginPath();
                     ctx.arc(center.x + dx_mm * plotScale, center.y + dy_mm * plotScale, (calMm/2) * plotScale, 0, Math.PI*2);
                     ctx.fill();
                     ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 1; ctx.stroke();
+                    
+                    ctx.fillStyle = '#fff'; ctx.font = '9px Inter';
+                    ctx.fillText(idx+1, center.x + dx_mm * plotScale + 5, center.y + dy_mm * plotScale - 5);
                 });
 
-                ctx.fillStyle = '#71717a'; ctx.font = '10px monospace';
-                ctx.fillText(`Maßstab: 100mm = ${100 * plotScale}px`, 10, h - 20);
-                ctx.fillText(`${group.name.toUpperCase()} | n = ${group.hits.length}`, 10, 25);
-                ctx.fillText(`ES: ${stats.es} mm | R95: ${stats.r95} mm`, 10, 45);
+                // --- Statistik-Block (Rechts integriert) ---
+                const sx = w - 240, sy = 40;
+                ctx.fillStyle = 'rgba(24, 24, 27, 0.9)'; ctx.fillRect(sx, sy, 220, 240);
+                ctx.strokeStyle = '#ef4444'; ctx.strokeRect(sx, sy, 220, 240);
+                
+                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 12px Inter';
+                ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
+                
+                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter';
+                ctx.fillText(`Element: ${group.name}`, sx + 15, sy + 50);
+                ctx.fillText(`Anzahl (n): ${group.hits.length}`, sx + 15, sy + 65);
+                ctx.fillText(`Distanz: ${document.getElementById('distance').value} m`, sx + 15, sy + 80);
+
+                const data = [
+                    ["Extremstreuung (ES)", stats.es + " mm"],
+                    ["Mittlerer Radius (MR)", stats.mr + " mm"],
+                    ["R50 (Zentral)", stats.r50 + " mm"],
+                    ["R95 (95% Vertr.)", stats.r95 + " mm"],
+                    ["Abweichung X/Y", stats.vector]
+                ];
+
+                data.forEach((item, i) => {
+                    ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 110 + (i*20));
+                    ctx.fillStyle = '#fff'; ctx.textAlign = "right";
+                    ctx.fillText(item[1], sx + 205, sy + 110 + (i*20));
+                    ctx.textAlign = "left";
+                });
+
+                ctx.fillStyle = '#ef4444'; ctx.font = 'bold 11px Inter';
+                ctx.fillText("KORREKTUR (0.1 MIL):", sx + 15, sy + 215);
+                ctx.font = 'bold 14px Inter';
+                ctx.fillText(stats.clicks, sx + 15, sy + 232);
+
+                // Metadaten
+                ctx.fillStyle = '#3f3f46'; ctx.font = '9px Inter';
+                ctx.fillText(`Erzeugt mit ShotAnalyst v6.5 | Maßstab: 100mm = ${100 * plotScale}px`, 20, h - 20);
+            }
+
+            savePlot() {
+                if (this.viewMode !== 'result') this.toggleView();
+                const link = document.createElement('a');
+                link.download = `ShotAnalyst_Report_${this.activeGroup.name}.png`;
+                link.href = this.resCanvas.toDataURL("image/png");
+                link.click();
             }
 
             renderUI() {
@@ -581,7 +630,7 @@
                 });
                 const b = new Blob([c], {type:'text/csv'});
                 const u = URL.createObjectURL(b);
-                const a = document.createElement('a'); a.href = u; a.download = 'Analyse_Export_v641.csv'; a.click();
+                const a = document.createElement('a'); a.href = u; a.download = 'ShotAnalyst_Export.csv'; a.click();
             }
         }
         const app = new ShotAnalyst();
