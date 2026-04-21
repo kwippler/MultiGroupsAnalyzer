@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShotAnalyst v6.0 - Multi-Target Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; cursor: crosshair; }
+        .no-cursor { cursor: default; }
+        #analysis-canvas { image-rendering: high-quality; }
+        .sidebar-scroll { max-height: calc(100vh - 200px); overflow-y: auto; }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
+
+    <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
+        
+        <!-- Linkes Bedienpanel -->
+        <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
+            <div class="p-4 border-b border-zinc-800 bg-zinc-900/50">
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.0</span></h1>
+                <p class="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Multi-Target Analysis Suite</p>
+            </div>
+
+            <div class="sidebar-scroll flex-1 p-4 space-y-6">
+                <!-- Konfiguration -->
+                <section>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 flex items-center">
+                        <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Konfiguration
+                    </h2>
+                    <div class="space-y-3">
+                        <button onclick="document.getElementById('fileInput').click()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-sm py-2 rounded transition border border-zinc-700 flex items-center justify-center">
+                            Bild laden
+                        </button>
+                        <input type="file" id="fileInput" class="hidden" accept="image/*">
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[10px] text-zinc-500 uppercase">Entfernung (m)</label>
+                                <input type="number" id="distance" value="100" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                            </div>
+                            <div>
+                                <label class="text-[10px] text-zinc-500 uppercase">Kaliber (mm)</label>
+                                <input type="number" id="caliber" value="7.62" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Gruppen-Management -->
+                <section>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 flex items-center justify-between">
+                        <span class="flex items-center">
+                            <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                            Schussgruppen
+                        </span>
+                        <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-xl font-bold">+</button>
+                    </h2>
+                    <div id="groupList" class="space-y-2">
+                        <!-- Dynamische Gruppenliste -->
+                    </div>
+                    <button onclick="app.toggleCompoundMode()" id="compoundBtn" class="mt-4 w-full border border-zinc-700 text-[10px] py-1 rounded hover:bg-zinc-800 transition uppercase tracking-widest text-zinc-400">
+                        Verbundgruppe anzeigen
+                    </button>
+                </section>
+
+                <!-- Datenerfassung -->
+                <section>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 flex items-center">
+                        <svg class="w-3 h-3 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        Aktion
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button id="mode-scale" onclick="app.setMode('scale')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase transition">Skalierung</button>
+                        <button id="mode-poa" onclick="app.setMode('poa')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase transition">Haltepunkt</button>
+                        <button id="mode-hit" onclick="app.setMode('hit')" class="text-[10px] py-2 rounded bg-red-900/20 border border-red-500/50 uppercase transition text-red-400">Treffer</button>
+                        <button onclick="app.undo()" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase transition">Rückgängig</button>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Fixierter Fußbereich -->
+            <div class="p-4 border-t border-zinc-800 bg-zinc-950/50">
+                <div class="flex justify-between items-end mb-3">
+                    <div>
+                        <p class="text-[10px] text-zinc-500 uppercase">Aktiv</p>
+                        <p id="activeGroupName" class="text-sm font-semibold text-red-500">Gruppe 1</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] text-zinc-500 uppercase">Treffer (n)</p>
+                        <p id="shotCount" class="text-xl font-bold">0</p>
+                    </div>
+                </div>
+                <button onclick="app.exportCSV()" class="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-2 rounded shadow-lg shadow-red-900/20 transition flex items-center justify-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Export
+                </button>
+            </div>
+        </aside>
+
+        <!-- Hauptbereich: Analysefläche -->
+        <main class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+            <div id="canvas-container" class="relative">
+                <canvas id="analysis-canvas"></canvas>
+                <!-- Crosshair Overlays -->
+                <div id="ch-v" class="absolute top-0 w-[1px] h-full bg-red-500/30 pointer-events-none hidden"></div>
+                <div id="ch-h" class="absolute left-0 w-full h-[1px] bg-red-500/30 pointer-events-none hidden"></div>
+            </div>
+            
+            <!-- Statistik Overlay (Rechts oben) -->
+            <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden">
+                <h3 class="text-xs font-bold text-red-500 uppercase mb-3 border-b border-zinc-700 pb-1">Statistik</h3>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between"><span class="text-zinc-500">Extremstreuung (ES):</span> <span id="stat-es" class="font-mono">--</span></div>
+                    <div class="flex justify-between"><span class="text-zinc-500">Mittlerer Radius (MR):</span> <span id="stat-mr" class="font-mono">--</span></div>
+                    <div class="flex justify-between"><span class="text-zinc-500">R50 (Streukreis):</span> <span id="stat-r50" class="font-mono">--</span></div>
+                    <div class="flex justify-between"><span class="text-zinc-500">Vektor POA &rarr; COI:</span> <span id="stat-vector" class="font-mono">--</span></div>
+                    <div class="mt-3 pt-2 border-t border-zinc-800 text-[10px] text-zinc-400">
+                        Korrektur (0.1 mrad): <span id="stat-clicks" class="text-red-400 font-bold">--</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        class ShotAnalyst {
+            constructor() {
+                this.canvas = document.getElementById('analysis-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.img = null;
+                this.scale = { p1: null, p2: null, distMm: 25 }; // Standard 25mm Referenz
+                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true }];
+                this.mmPerPixel = 1;
+                this.mode = 'hit'; // scale, poa, hit
+                this.compoundMode = false;
+                
+                this.initEventListeners();
+                this.renderUI();
+            }
+
+            get activeGroup() {
+                return this.groups.find(g => g.active);
+            }
+
+            initEventListeners() {
+                document.getElementById('fileInput').addEventListener('change', (e) => this.loadImage(e));
+                this.canvas.addEventListener('mousedown', (e) => this.handleCanvasClick(e));
+                this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                this.canvas.addEventListener('mouseleave', () => this.toggleCrosshair(false));
+                this.canvas.addEventListener('mouseenter', () => this.toggleCrosshair(true));
+                window.addEventListener('resize', () => this.draw());
+            }
+
+            loadImage(e) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    this.img = new Image();
+                    this.img.onload = () => {
+                        this.resizeCanvas();
+                        this.draw();
+                    };
+                    this.img.src = event.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+
+            resizeCanvas() {
+                if (!this.img) return;
+                const container = document.getElementById('canvas-container');
+                const maxWidth = container.parentElement.clientWidth * 0.95;
+                const maxHeight = container.parentElement.clientHeight * 0.95;
+                
+                let w = this.img.width;
+                let h = this.img.height;
+                const ratio = w / h;
+
+                if (w > maxWidth) { w = maxWidth; h = w / ratio; }
+                if (h > maxHeight) { h = maxHeight; w = h * ratio; }
+
+                this.canvas.width = w;
+                this.canvas.height = h;
+            }
+
+            handleCanvasClick(e) {
+                if (!this.img) return;
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                if (this.mode === 'scale') {
+                    if (!this.scale.p1) this.scale.p1 = { x, y };
+                    else if (!this.scale.p2) {
+                        this.scale.p2 = { x, y };
+                        const pixDist = Math.hypot(this.scale.p1.x - this.scale.p2.x, this.scale.p1.y - this.scale.p2.y);
+                        this.mmPerPixel = this.scale.distMm / pixDist;
+                        this.setMode('hit');
+                    } else {
+                        this.scale.p1 = { x, y };
+                        this.scale.p2 = null;
+                    }
+                } else if (this.mode === 'poa') {
+                    this.activeGroup.poa = { x, y };
+                } else if (this.mode === 'hit' && !this.compoundMode) {
+                    this.activeGroup.hits.push({ x, y });
+                }
+
+                this.draw();
+                this.renderUI();
+            }
+
+            handleMouseMove(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                document.getElementById('ch-v').style.left = x + 'px';
+                document.getElementById('ch-h').style.top = y + 'px';
+            }
+
+            toggleCrosshair(show) {
+                const display = show ? 'block' : 'none';
+                document.getElementById('ch-v').style.display = display;
+                document.getElementById('ch-h').style.display = display;
+            }
+
+            setMode(mode) {
+                this.mode = mode;
+                document.querySelectorAll('[id^="mode-"]').forEach(btn => {
+                    btn.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400');
+                    btn.classList.add('bg-zinc-800', 'border-zinc-700', 'text-slate-200');
+                });
+                const activeBtn = document.getElementById(`mode-${mode}`);
+                activeBtn.classList.replace('bg-zinc-800', 'bg-red-900/20');
+                activeBtn.classList.replace('border-zinc-700', 'border-red-500/50');
+                activeBtn.classList.add('text-red-400');
+                
+                if (mode === 'scale') {
+                    this.scale.p1 = null;
+                    this.scale.p2 = null;
+                }
+            }
+
+            addGroup() {
+                this.groups.forEach(g => g.active = false);
+                const id = Date.now();
+                this.groups.push({ id, name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true });
+                this.compoundMode = false;
+                this.draw();
+                this.renderUI();
+            }
+
+            selectGroup(id) {
+                this.groups.forEach(g => g.active = (g.id === id));
+                this.compoundMode = false;
+                this.draw();
+                this.renderUI();
+            }
+
+            deleteGroup(id) {
+                if (this.groups.length <= 1) return;
+                this.groups = this.groups.filter(g => g.id !== id);
+                if (!this.activeGroup) this.groups[0].active = true;
+                this.draw();
+                this.renderUI();
+            }
+
+            toggleCompoundMode() {
+                this.compoundMode = !this.compoundMode;
+                const btn = document.getElementById('compoundBtn');
+                if (this.compoundMode) {
+                    btn.classList.add('bg-red-500/20', 'border-red-500', 'text-red-500');
+                    this.groups.forEach(g => g.active = false);
+                } else {
+                    btn.classList.remove('bg-red-500/20', 'border-red-500', 'text-red-500');
+                    this.groups[0].active = true;
+                }
+                this.draw();
+                this.renderUI();
+            }
+
+            undo() {
+                if (this.activeGroup && this.activeGroup.hits.length > 0) {
+                    this.activeGroup.hits.pop();
+                    this.draw();
+                    this.renderUI();
+                }
+            }
+
+            calculateStats(hits, poa) {
+                if (hits.length < 2) return null;
+                
+                const distanceM = parseFloat(document.getElementById('distance').value);
+                
+                // Center of Impact (COI)
+                const coi = {
+                    x: hits.reduce((a, b) => a + b.x, 0) / hits.length,
+                    y: hits.reduce((a, b) => a + b.y, 0) / hits.length
+                };
+
+                // Extreme Spread (ES)
+                let maxDist = 0;
+                for (let i = 0; i < hits.length; i++) {
+                    for (let j = i + 1; j < hits.length; j++) {
+                        const d = Math.hypot(hits[i].x - hits[j].x, hits[i].y - hits[j].y);
+                        if (d > maxDist) maxDist = d;
+                    }
+                }
+
+                // Mean Radius (MR)
+                const mr = hits.reduce((sum, h) => sum + Math.hypot(h.x - coi.x, h.y - coi.y), 0) / hits.length;
+
+                // R50 (Rayleigh approx: 1.177 * Sigma, simplified here as factor of MR for n)
+                const r50 = mr * 1.25; 
+
+                // Deviation to POA
+                let vectorText = "--";
+                let clicksText = "--";
+                if (poa) {
+                    const dx = (coi.x - poa.x) * this.mmPerPixel;
+                    const dy = (poa.y - coi.y) * this.mmPerPixel; // Screen Y invertiert
+                    vectorText = `X:${dx.toFixed(1)} Y:${dy.toFixed(1)} mm`;
+                    
+                    const clicksX = Math.round(dx / (distanceM * 0.0001) / 100); // 1cm @ 100m = 0.1mrad
+                    const clicksY = Math.round(dy / (distanceM * 0.0001) / 100);
+                    clicksText = `${clicksX > 0 ? 'R':'L'}${Math.abs(clicksX)} / ${clicksY > 0 ? 'H':'T'}${Math.abs(clicksY)}`;
+                }
+
+                return { 
+                    es: (maxDist * this.mmPerPixel).toFixed(2) + " mm",
+                    mr: (mr * this.mmPerPixel).toFixed(2) + " mm",
+                    r50: (r50 * this.mmPerPixel).toFixed(2) + " mm",
+                    vector: vectorText,
+                    clicks: clicksText,
+                    coi
+                };
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                if (this.img) this.ctx.drawImage(this.img, 0, 0, this.canvas.width, this.canvas.height);
+
+                const caliberPix = parseFloat(document.getElementById('caliber').value) / this.mmPerPixel;
+
+                // Skalierungslinie zeichnen
+                if (this.scale.p1) {
+                    this.ctx.strokeStyle = '#ef4444';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 4, 0, Math.PI * 2);
+                    if (this.scale.p2) {
+                        this.ctx.moveTo(this.scale.p1.x, this.scale.p1.y);
+                        this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y);
+                        this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 4, 0, Math.PI * 2);
+                    }
+                    this.ctx.stroke();
+                }
+
+                const groupsToDraw = this.compoundMode ? this.groups : [this.activeGroup];
+                const allHits = this.groups.flatMap(g => g.hits);
+                const masterPOA = this.groups.find(g => g.poa)?.poa || null;
+
+                groupsToDraw.forEach(group => {
+                    if (!group) return;
+                    
+                    const color = group.active ? '#ef4444' : '#52525b';
+                    this.ctx.strokeStyle = color;
+                    this.ctx.lineWidth = 1.5;
+
+                    // Treffer zeichnen
+                    group.hits.forEach((hit, idx) => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(hit.x, hit.y, caliberPix / 2, 0, Math.PI * 2);
+                        this.ctx.fillStyle = group.active ? 'rgba(239, 68, 68, 0.3)' : 'rgba(82, 82, 91, 0.3)';
+                        this.ctx.fill();
+                        this.ctx.stroke();
+                        
+                        this.ctx.fillStyle = color;
+                        this.ctx.font = '10px monospace';
+                        this.ctx.fillText(idx + 1, hit.x + caliberPix, hit.y - caliberPix);
+                    });
+
+                    // POA zeichnen
+                    if (group.poa) {
+                        this.ctx.strokeStyle = '#22c55e';
+                        this.ctx.beginPath();
+                        const s = 10;
+                        this.ctx.moveTo(group.poa.x - s, group.poa.y);
+                        this.ctx.lineTo(group.poa.x + s, group.poa.y);
+                        this.ctx.moveTo(group.poa.x, group.poa.y - s);
+                        this.ctx.lineTo(group.poa.x, group.poa.y + s);
+                        this.ctx.stroke();
+                    }
+                });
+
+                // Statistik aktualisieren
+                const targetHits = this.compoundMode ? allHits : (this.activeGroup?.hits || []);
+                const targetPOA = this.compoundMode ? masterPOA : (this.activeGroup?.poa || null);
+                const stats = this.calculateStats(targetHits, targetPOA);
+
+                const panel = document.getElementById('stats-panel');
+                if (stats) {
+                    panel.classList.remove('hidden');
+                    document.getElementById('stat-es').innerText = stats.es;
+                    document.getElementById('stat-mr').innerText = stats.mr;
+                    document.getElementById('stat-r50').innerText = stats.r50;
+                    document.getElementById('stat-vector').innerText = stats.vector;
+                    document.getElementById('stat-clicks').innerText = stats.clicks;
+                    
+                    // COI Markierung
+                    this.ctx.setLineDash([5, 3]);
+                    this.ctx.strokeStyle = '#ef4444';
+                    this.ctx.beginPath();
+                    this.ctx.arc(stats.coi.x, stats.coi.y, 5, 0, Math.PI*2);
+                    this.ctx.stroke();
+                    this.ctx.setLineDash([]);
+                } else {
+                    panel.classList.add('hidden');
+                }
+            }
+
+            renderUI() {
+                const list = document.getElementById('groupList');
+                list.innerHTML = '';
+                this.groups.forEach(g => {
+                    const div = document.createElement('div');
+                    div.className = `flex items-center justify-between p-2 rounded border transition cursor-pointer ${g.active ? 'bg-red-900/10 border-red-500/50 text-red-400' : 'bg-zinc-800/50 border-zinc-700 hover:bg-zinc-800'}`;
+                    div.onclick = () => this.selectGroup(g.id);
+                    div.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="text-xs font-semibold">${g.name}</span>
+                            <span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Schuss</span>
+                        </div>
+                        <button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 text-xs">✕</button>
+                    `;
+                    list.appendChild(div);
+                });
+
+                document.getElementById('activeGroupName').innerText = this.compoundMode ? "Verbundgruppe" : (this.activeGroup?.name || "--");
+                document.getElementById('shotCount').innerText = this.compoundMode ? this.groups.flatMap(g => g.hits).length : (this.activeGroup?.hits.length || 0);
+            }
+
+            exportCSV() {
+                let csv = "Gruppe;Schuss_Nr;X_px;Y_px\n";
+                this.groups.forEach(g => {
+                    g.hits.forEach((h, i) => {
+                        csv += `${g.name};${i+1};${h.x.toFixed(2)};${h.y.toFixed(2)}\n`;
+                    });
+                });
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.setAttribute('hidden', '');
+                a.setAttribute('href', url);
+                a.setAttribute('download', 'ShotAnalyst_Export.csv');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+        }
+
+        const app = new ShotAnalyst();
+    </script>
+</body>
+</html>
