@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.28</title>
+    <title>ShotAnalyst v6.30</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -14,7 +14,7 @@
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
-        #stats-panel { cursor: grab; min-width: 400px; transition: opacity 0.2s; }
+        #stats-panel { cursor: grab; min-width: 420px; transition: opacity 0.2s; }
         #stats-panel:active { cursor: grabbing; }
         .stats-row { 
             display: grid; 
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.28</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.30</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -160,8 +160,8 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.resCtx = this.resCanvas.getContext('2d');
                 this.originalImg = null; this.croppedImg = null; this.viewMode = 'analysis'; 
-                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
-                this.imageHistory = []; this.scale = { p1: null, p2: null }; this.mode = 'hit'; 
+                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }];
+                this.imageHistory = []; this.mode = 'hit'; 
                 this.pendingHit = null; this.draggingHit = null; this.cropStart = null; this.cropRect = null;
                 this.resultZoom = 2.0; this.isDraggingStats = false;
                 this.statsPanel = document.getElementById('stats-panel'); this.dragOffset = { x: 0, y: 0 };
@@ -169,9 +169,10 @@
             }
 
             get activeGroup() { return this.groups.find(g => g.active); }
-            get mmPerPixel() {
-                if (!this.scale.p1 || !this.scale.p2) return 1;
-                const pixDist = Math.hypot(this.scale.p1.x - this.scale.p2.x, this.scale.p1.y - this.scale.p2.y);
+
+            getGroupMmp(group) {
+                if (!group || !group.scale || !group.scale.p1 || !group.scale.p2) return 1;
+                const pixDist = Math.hypot(group.scale.p1.x - group.scale.p2.x, group.scale.p1.y - group.scale.p2.y);
                 return (parseFloat(document.getElementById('refMm').value) || 20) / pixDist;
             }
 
@@ -189,7 +190,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.28", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.30", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -203,7 +204,7 @@
                         document.getElementById('distance').value = data.distance;
                         document.getElementById('refMm').value = data.refMm;
                         document.getElementById('caliber').value = data.caliber;
-                        this.scale = data.scale; this.groups = data.groups;
+                        this.groups = data.groups;
                         this.draw(); this.renderUI();
                     } catch (err) { console.error("Ladefehler", err); }
                 };
@@ -220,7 +221,6 @@
                         this.originalImg = tempImg; 
                         this.croppedImg = tempImg; 
                         this.imageHistory = []; 
-                        this.scale = { p1: null, p2: null };
                         this.pendingHit = null;
                         this.draggingHit = null;
                         this.cropRect = null;
@@ -241,7 +241,7 @@
                 if (this.originalImg) {
                     this.croppedImg = this.originalImg; 
                     this.imageHistory = [];
-                    this.scale = { p1: null, p2: null };
+                    if (this.activeGroup) this.activeGroup.scale = { p1: null, p2: null };
                     this.resizeCanvas(); 
                     this.draw(); 
                     this.renderUI();
@@ -266,15 +266,18 @@
                 if (!this.croppedImg || this.viewMode === 'result') return;
                 const rect = this.canvas.getBoundingClientRect();
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
+                const ag = this.activeGroup;
+                if (!ag) return;
+
                 if (this.mode === 'crop') this.cropStart = { x, y };
                 else if (this.mode === 'scale') {
-                    if (!this.scale.p1) this.scale.p1 = { x, y }; else if (!this.scale.p2) this.scale.p2 = { x, y };
-                    else { this.scale.p1 = { x, y }; this.scale.p2 = null; }
-                } else if (this.mode === 'poa') { if (!this.activeGroup.isVirtual) this.activeGroup.poa = { x, y }; }
+                    if (!ag.scale.p1) ag.scale.p1 = { x, y }; else if (!ag.scale.p2) ag.scale.p2 = { x, y };
+                    else { ag.scale.p1 = { x, y }; ag.scale.p2 = null; }
+                } else if (this.mode === 'poa') { if (!ag.isVirtual) ag.poa = { x, y }; }
                 else if (this.mode === 'hit' && !this.pendingHit) {
-                    if (!this.activeGroup.isVirtual) { this.pendingHit = { x, y }; document.getElementById('confirm-dialog').classList.remove('hidden'); }
+                    if (!ag.isVirtual) { this.pendingHit = { x, y }; document.getElementById('confirm-dialog').classList.remove('hidden'); }
                 } else if (this.mode === 'adjust') {
-                    if (!this.activeGroup.isVirtual) { const hit = this.activeGroup.hits.find(h => Math.hypot(h.x - x, h.y - y) < 20); if (hit) this.draggingHit = hit; }
+                    if (!ag.isVirtual) { const hit = ag.hits.find(h => Math.hypot(h.x - x, h.y - y) < 20); if (hit) this.draggingHit = hit; }
                 }
                 this.draw();
             }
@@ -307,7 +310,7 @@
             setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400')); document.getElementById(`mode-${m}`).classList.add('bg-red-900/20', 'border-red-500/50', 'text-red-400'); }
             toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
             toggleCrosshair(s) { const d = s && this.viewMode === 'analysis' ? 'block' : 'none'; document.getElementById('ch-v').style.display = d; document.getElementById('ch-h').style.display = d; }
-            addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false }); this.draw(); this.renderUI(); }
+            addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
             toggleSelection(id) { const g = this.groups.find(x => x.id === id); if (g) g.selected = !g.selected; this.renderUI(); }
             
@@ -315,15 +318,12 @@
             
             finalizeMerge() {
                 const selectedGroups = this.groups.filter(g => g.selected);
-                const virtualGroup = { 
-                    id: Date.now(), 
-                    name: `Verbund (${selectedGroups.length} El.)`, 
-                    hits: JSON.parse(JSON.stringify(selectedGroups.flatMap(g => g.hits))), 
-                    poa: selectedGroups.find(g => g.poa)?.poa ? JSON.parse(JSON.stringify(selectedGroups.find(g => g.poa).poa)) : null, 
-                    active: true, 
-                    selected: false, 
-                    isVirtual: true 
-                };
+                const transformedHits = selectedGroups.flatMap(g => {
+                    const mmp = this.getGroupMmp(g);
+                    const poa = g.poa || { x: 0, y: 0 };
+                    return g.hits.map(h => ({ x: (h.x - poa.x) * mmp, y: (poa.y - h.y) * mmp, isMetric: true }));
+                });
+                const virtualGroup = { id: Date.now(), name: `Verbund (${selectedGroups.length} El.)`, hits: transformedHits, poa: { x: 0, y: 0 }, active: true, selected: false, isVirtual: true, scale: null };
                 this.groups.forEach(g => { g.active = false; g.selected = false; });
                 this.groups.push(virtualGroup); 
                 document.getElementById('merge-confirm').classList.add('hidden'); 
@@ -331,9 +331,11 @@
                 this.renderUI();
             }
 
-            calculateStats(hits, poa) {
+            calculateStats(hits, group) {
                 if (hits.length < 2) return null;
-                const mmp = this.mmPerPixel; const distM = parseFloat(document.getElementById('distance').value) || 100;
+                const isMetric = group.isVirtual;
+                const mmp = isMetric ? 1 : this.getGroupMmp(group);
+                const distM = parseFloat(document.getElementById('distance').value) || 100;
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
                 const moaFactor = distM * 0.290888;
                 const varX = hits.reduce((s, h) => s + Math.pow((h.x - coi.x) * mmp, 2), 0) / (hits.length - 1);
@@ -345,8 +347,9 @@
                 const r95 = 2.4477 * sigma;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
                 let vector = "--", clicks = "--", dx = 0, dy = 0;
-                if (poa) {
-                    dx = (coi.x - poa.x) * mmp; dy = (poa.y - coi.y) * mmp;
+                if (isMetric || group.poa) {
+                    dx = isMetric ? coi.x : (coi.x - group.poa.x) * mmp;
+                    dy = isMetric ? coi.y : (group.poa.y - coi.y) * mmp;
                     vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                     const mmC = distM * 0.1; clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
                 }
@@ -357,41 +360,65 @@
                 if (this.viewMode === 'result') return;
                 this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
                 if (this.croppedImg) this.ctx.drawImage(this.croppedImg, 0,0,this.canvas.width,this.canvas.height);
-                const mmp = this.mmPerPixel; 
-                const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
+                
                 const g = this.activeGroup;
-                if (g) {
-                    const color = '#ef4444';
-                    g.hits.forEach(h => { 
-                        this.ctx.strokeStyle = color; this.ctx.beginPath(); 
-                        this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); 
-                    });
-                    if (g.poa) { 
-                        this.ctx.strokeStyle = '#22c55e'; this.ctx.beginPath(); 
-                        this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); 
-                        this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); 
-                    }
-                    if (g.hits.length >= 2) {
-                        const s = this.calculateStats(g.hits, g.poa);
-                        if (s) { 
-                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.setLineDash([2, 2]); 
-                            this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
-                            this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; 
-                            this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
-                        }
+                if (!g) return;
+
+                // 10-mm-Raster für Analyse-Canvas
+                if (!g.isVirtual && g.scale.p1 && g.scale.p2) {
+                    const mmp = this.getGroupMmp(g);
+                    const gridStep = 10 / mmp; // 10 mm in Pixeln
+                    if (gridStep > 4) { // Schutz gegen Überlagerung bei extrem kleiner Skalierung
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                        this.ctx.lineWidth = 0.5;
+                        this.ctx.beginPath();
+                        const anchor = g.poa || { x: 0, y: 0 };
+                        // Vertikale Linien
+                        for (let x = anchor.x; x < this.canvas.width; x += gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
+                        for (let x = anchor.x - gridStep; x > 0; x -= gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
+                        // Horizontale Linien
+                        for (let y = anchor.y; y < this.canvas.height; y += gridStep) { this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); }
+                        for (let y = anchor.y - gridStep; y > 0; y -= gridStep) { this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); }
+                        this.ctx.stroke();
                     }
                 }
-                if (this.scale.p1) { 
+
+                if (g.isVirtual) { this.updateStats(); return; }
+
+                const mmp = this.getGroupMmp(g); 
+                const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
+                
+                this.ctx.strokeStyle = '#ef4444';
+                g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
+
+                if (g.poa) { 
+                    this.ctx.strokeStyle = '#22c55e'; this.ctx.beginPath(); 
+                    this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); 
+                    this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); 
+                }
+
+                if (g.hits.length >= 2) {
+                    const s = this.calculateStats(g.hits, g);
+                    if (s) { 
+                        this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.setLineDash([2, 2]); 
+                        this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
+                        this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; 
+                        this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
+                    }
+                }
+
+                if (g.scale && g.scale.p1) { 
                     this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
-                    this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2); 
-                    if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); } 
+                    this.ctx.arc(g.scale.p1.x, g.scale.p1.y, 3, 0, Math.PI*2); 
+                    if (g.scale.p2) { this.ctx.lineTo(g.scale.p2.x, g.scale.p2.y); this.ctx.arc(g.scale.p2.x, g.scale.p2.y, 3, 0, Math.PI*2); } 
                     this.ctx.stroke(); 
                 }
                 this.updateStats();
             }
 
             updateStats() {
-                const s = this.calculateStats(this.activeGroup?.hits || [], this.activeGroup?.poa);
+                const ag = this.activeGroup;
+                const s = this.calculateStats(ag?.hits || [], ag);
                 const p = document.getElementById('stats-panel');
                 if (s) { 
                     p.classList.remove('hidden'); 
@@ -409,25 +436,19 @@
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                
                 const reportMmScale = this.resultZoom;
                 const gridSpacing = 10 * reportMmScale;
-
-                // 10mm Raster zeichnen
-                ctx.strokeStyle = '#27272a';
-                ctx.lineWidth = 0.5;
-                ctx.beginPath();
+                ctx.strokeStyle = '#27272a'; ctx.lineWidth = 0.5; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let x = center.x; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 for (let y = center.y; y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 ctx.stroke();
-
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
                 ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
-                const g = this.activeGroup; if (!g || g.hits.length === 0 || !g.poa) return;
-                const s = this.calculateStats(g.hits, g.poa); 
+                const g = this.activeGroup; if (!g || g.hits.length === 0) return;
+                const s = this.calculateStats(g.hits, g); 
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
                 ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
@@ -435,10 +456,10 @@
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
                 ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 6, 0, Math.PI*2); ctx.fill();
                 const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
-                const mmp = this.mmPerPixel;
+                const mmp = g.isVirtual ? 1 : this.getGroupMmp(g);
                 g.hits.forEach((h, i) => { 
-                    const hx = center.x + (h.x - g.poa.x) * mmp * reportMmScale;
-                    const hy = center.y - (g.poa.y - h.y) * mmp * reportMmScale;
+                    const hx = center.x + (g.isVirtual ? h.x : (h.x - g.poa.x) * mmp) * reportMmScale;
+                    const hy = center.y - (g.isVirtual ? h.y : (g.poa.y - h.y) * mmp) * reportMmScale;
                     ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); 
                     ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); 
                 });
@@ -452,7 +473,7 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 375 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.28 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.30 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
@@ -460,11 +481,13 @@
             exportCSV() {
                 let c = "\ufeffName;n;X_mm;Y_mm\n";
                 this.groups.forEach(g => {
-                    const p = g.poa || {x:0, y:0};
+                    const isMetric = g.isVirtual;
+                    const mmp = isMetric ? 1 : this.getGroupMmp(g);
+                    const poa = g.poa || {x:0, y:0};
                     g.hits.forEach((h, i) => {
-                        const dx = ((h.x - p.x) * this.mmPerPixel).toFixed(4).replace('.', ',');
-                        const dy = ((p.y - h.y) * this.mmPerPixel).toFixed(4).replace('.', ',');
-                        c += `${g.name};${i+1};${dx};${dy}\n`;
+                        const dx = isMetric ? h.x : (h.x - poa.x) * mmp;
+                        const dy = isMetric ? h.y : (poa.y - h.y) * mmp;
+                        c += `${g.name};${i+1};${dx.toFixed(4).replace('.', ',')};${dy.toFixed(4).replace('.', ',')}\n`;
                     });
                 });
                 const blob = new Blob([c], { type: 'text/csv;charset=utf-8;' });
