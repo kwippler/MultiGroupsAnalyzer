@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.23</title>
+    <title>ShotAnalyst v6.24</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -26,7 +26,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.23</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.24</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -169,7 +169,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.23", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.24", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -195,9 +195,25 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
-                        this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
+                        this.originalImg = tempImg; 
+                        this.croppedImg = tempImg; 
+                        this.imageHistory = []; 
+                        
+                        // Maßstabsdefinition und Interaktionszustand zurücksetzen
+                        this.scale = { p1: null, p2: null };
+                        this.pendingHit = null;
+                        this.draggingHit = null;
+                        this.cropRect = null;
+                        this.cropStart = null;
+                        
+                        // Vorhandene Gruppen deselektieren für neue Messreihe
+                        this.groups.forEach(g => g.selected = false);
+                        
                         if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
-                        this.resizeCanvas(); this.draw(); this.renderUI(); 
+                        
+                        this.resizeCanvas(); 
+                        this.draw(); 
+                        this.renderUI(); 
                     };
                     tempImg.src = event.target.result;
                 };
@@ -206,8 +222,13 @@
 
             resetCrop() {
                 if (this.originalImg) {
-                    this.croppedImg = this.originalImg; this.imageHistory = [];
-                    this.resizeCanvas(); this.draw(); this.renderUI();
+                    this.croppedImg = this.originalImg; 
+                    this.imageHistory = [];
+                    // Referenzskalierung bei Rückkehr zum Originalbild ebenfalls löschen
+                    this.scale = { p1: null, p2: null };
+                    this.resizeCanvas(); 
+                    this.draw(); 
+                    this.renderUI();
                 }
             }
 
@@ -348,28 +369,18 @@
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                
-                // Millimeter-Skalierung auf dem Bericht-Canvas (unabhängig vom Eingangs-Bildformat)
                 const reportMmScale = this.resultZoom; 
-                
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
-                
                 ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
-                
                 const g = this.activeGroup; if (!g || g.hits.length === 0 || !g.poa) return;
                 const s = this.calculateStats(g.hits, g.poa); 
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
-                
-                // R95 & R50 Kreise (Berechnung basierend auf mm-Werten und Report-Skalierung)
                 ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                
                 ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                
                 ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 6, 0, Math.PI*2); ctx.fill();
-                
                 const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
                 const mmp = this.mmPerPixel;
                 g.hits.forEach((h, i) => { 
@@ -416,7 +427,7 @@
                     ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3);
                 });
 
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.23 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.24 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
