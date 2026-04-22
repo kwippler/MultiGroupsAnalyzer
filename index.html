@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.24</title>
+    <title>ShotAnalyst v6.25</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -26,7 +26,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.24</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.25</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -169,7 +169,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.24", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.25", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -191,6 +191,8 @@
             }
 
             loadImage(e) {
+                const file = e.target.files[0];
+                if (!file) return;
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     const tempImg = new Image();
@@ -199,32 +201,35 @@
                         this.croppedImg = tempImg; 
                         this.imageHistory = []; 
                         
-                        // Maßstabsdefinition und Interaktionszustand zurücksetzen
+                        // Rücksetzen der Kalibrierung und Zustände
                         this.scale = { p1: null, p2: null };
                         this.pendingHit = null;
                         this.draggingHit = null;
                         this.cropRect = null;
                         this.cropStart = null;
                         
-                        // Vorhandene Gruppen deselektieren für neue Messreihe
+                        // Deselektion vorhandener Gruppen
                         this.groups.forEach(g => g.selected = false);
                         
+                        // Neue Gruppe anlegen falls bereits Daten existieren
                         if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
                         
                         this.resizeCanvas(); 
                         this.draw(); 
                         this.renderUI(); 
+
+                        // Eingabewert leeren, um Re-Import desselben Bildes zu ermöglichen
+                        e.target.value = "";
                     };
                     tempImg.src = event.target.result;
                 };
-                reader.readAsDataURL(e.target.files[0]);
+                reader.readAsDataURL(file);
             }
 
             resetCrop() {
                 if (this.originalImg) {
                     this.croppedImg = this.originalImg; 
                     this.imageHistory = [];
-                    // Referenzskalierung bei Rückkehr zum Originalbild ebenfalls löschen
                     this.scale = { p1: null, p2: null };
                     this.resizeCanvas(); 
                     this.draw(); 
@@ -234,7 +239,7 @@
 
             updateZoom(val) { this.resultZoom = parseFloat(val); document.getElementById('zoom-val').innerText = this.resultZoom.toFixed(1); if (this.viewMode === 'result') this.drawResult(); }
             startStatsDrag(e) { if (e.target.tagName === 'INPUT') return; this.isDraggingStats = true; this.dragOffset.x = e.clientX - this.statsPanel.offsetLeft; this.dragOffset.y = e.clientY - this.statsPanel.offsetTop; }
-            doStatsDrag(e) { if (!this.isDraggingStats) return; this.statsPanel.style.left = `${e.clientX - this.dragOffset.x}px`; this.statsPanel.style.top = `${e.clientY - this.dragOffset.y}px`; this.statsPanel.style.right = 'auto'; }
+            doStatsDrag(e) { if (!this.isDraggingStats) return; this.statsPanel.style.left = `${e.clientX - this.dragOffset.x}px`; this.statsPanel.style.top = `${e.clientY - this.statsPanel.offsetTop}px`; this.statsPanel.style.right = 'auto'; }
             stopStatsDrag() { this.isDraggingStats = false; }
 
             resizeCanvas() {
@@ -427,7 +432,7 @@
                     ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3);
                 });
 
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.24 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.25 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
