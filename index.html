@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.34</title>
+    <title>ShotAnalyst v6.35</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -33,10 +33,9 @@
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
-        <!-- Seitenleiste für Parameter und Steuerung -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.34</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.35</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -106,13 +105,12 @@
             </div>
         </aside>
 
-        <!-- Hauptarbeitsbereich -->
         <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
-                    <div id="ch-v" class="absolute top-0 w-[1px] h-full bg-red-500/30 pointer-events-none hidden"></div>
-                    <div id="ch-h" class="absolute left-0 w-full h-[1px] bg-red-500/30 pointer-events-none hidden"></div>
+                    <div id="ch-v" class="absolute top-0 w-[2px] h-full bg-red-500/60 pointer-events-none hidden"></div>
+                    <div id="ch-h" class="absolute left-0 w-full h-[2px] bg-red-500/60 pointer-events-none hidden"></div>
                     
                     <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-red-500 p-2 rounded shadow-xl hidden flex gap-2 z-50">
                         <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Bestätigen</button>
@@ -132,7 +130,6 @@
                 </div>
             </div>
 
-            <!-- Ergebnis-Vorschau -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
@@ -146,7 +143,6 @@
                 </div>
             </div>
             
-            <!-- Statistik-Panel -->
             <div id="stats-panel" class="absolute top-6 right-6 bg-zinc-900/95 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-md no-cursor hidden select-none z-40">
                 <div class="flex justify-between items-center border-b border-zinc-700 pb-2 mb-3">
                     <h3 class="text-[11px] font-bold text-red-500 uppercase tracking-wider">Statistische Kenngrößen</h3>
@@ -164,7 +160,8 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.resCtx = this.resCanvas.getContext('2d');
                 this.originalImg = null; this.croppedImg = null; this.viewMode = 'analysis'; 
-                this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }];
+                this.currentContextId = Date.now();
+                this.groups = [{ id: Date.now(), contextId: this.currentContextId, name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }];
                 this.imageHistory = []; this.mode = 'hit'; 
                 this.pendingHit = null; this.draggingHit = null; this.cropStart = null; this.cropRect = null;
                 this.resultZoom = 2.0; this.isDraggingStats = false;
@@ -196,7 +193,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.34", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.35", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung.json`; a.click();
             }
@@ -224,11 +221,15 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
+                        this.currentContextId = Date.now();
                         this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
                         this.pendingHit = null; this.draggingHit = null; this.cropRect = null; this.cropStart = null;
                         this.groups.forEach(g => g.selected = false);
                         if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
-                        else if (this.activeGroup) this.activeGroup.scale = { p1: null, p2: null };
+                        else if (this.activeGroup) {
+                            this.activeGroup.scale = { p1: null, p2: null };
+                            this.activeGroup.contextId = this.currentContextId;
+                        }
                         this.resizeCanvas(); this.draw(); this.renderUI(); 
                         e.target.value = "";
                     };
@@ -239,8 +240,12 @@
 
             resetCrop() {
                 if (this.originalImg) {
+                    this.currentContextId = Date.now();
                     this.croppedImg = this.originalImg; this.imageHistory = [];
-                    if (this.activeGroup) this.activeGroup.scale = { p1: null, p2: null };
+                    if (this.activeGroup) {
+                        this.activeGroup.scale = { p1: null, p2: null };
+                        this.activeGroup.contextId = this.currentContextId;
+                    }
                     this.resizeCanvas(); this.draw(); this.renderUI();
                 }
             }
@@ -288,10 +293,8 @@
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
                 const ag = this.activeGroup;
                 if (ag && !ag.isVirtual) {
-                    // Falls durch den ersten Klick ein Dialog offen ist: Schließen
                     this.pendingHit = null;
                     document.getElementById('confirm-dialog').classList.add('hidden');
-                    // Treffer unmittelbar hinzufügen
                     ag.hits.push({ x, y });
                     this.draw();
                     this.renderUI();
@@ -311,13 +314,18 @@
 
             finalizeCrop() {
                 this.imageHistory.push(this.croppedImg);
+                this.currentContextId = Date.now();
                 const off = document.createElement('canvas');
                 off.width = this.cropRect.w * (this.croppedImg.width / this.canvas.width);
                 off.height = this.cropRect.h * (this.croppedImg.height / this.canvas.height);
                 const octx = off.getContext('2d');
                 octx.drawImage(this.canvas, this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h, 0, 0, off.width, off.height);
                 const ni = new Image();
-                ni.onload = () => { this.croppedImg = ni; this.cropRect = null; this.resizeCanvas(); this.draw(); this.renderUI(); };
+                ni.onload = () => { 
+                    this.croppedImg = ni; this.cropRect = null; 
+                    if (this.activeGroup) this.activeGroup.contextId = this.currentContextId;
+                    this.resizeCanvas(); this.draw(); this.renderUI(); 
+                };
                 ni.src = off.toDataURL();
             }
 
@@ -326,7 +334,7 @@
             setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400')); document.getElementById(`mode-${m}`).classList.add('bg-red-900/20', 'border-red-500/50', 'text-red-400'); }
             toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
             toggleCrosshair(s) { const d = s && this.viewMode === 'analysis' ? 'block' : 'none'; document.getElementById('ch-v').style.display = d; document.getElementById('ch-h').style.display = d; }
-            addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
+            addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), contextId: this.currentContextId, name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
             toggleSelection(id) { const g = this.groups.find(x => x.id === id); if (g) g.selected = !g.selected; this.renderUI(); }
             requestMerge() { if (this.groups.filter(g => g.selected).length >= 2) document.getElementById('merge-confirm').classList.remove('hidden'); }
@@ -338,7 +346,7 @@
                     const poa = g.poa || { x: 0, y: 0 };
                     return g.hits.map(h => ({ x: (h.x - poa.x) * mmp, y: (poa.y - h.y) * mmp, isMetric: true }));
                 });
-                const virtualGroup = { id: Date.now(), name: `Verbund (${selectedGroups.length} El.)`, hits: transformedHits, poa: { x: 0, y: 0 }, active: true, selected: false, isVirtual: true, scale: null };
+                const virtualGroup = { id: Date.now(), contextId: null, name: `Verbund (${selectedGroups.length} El.)`, hits: transformedHits, poa: { x: 0, y: 0 }, active: true, selected: false, isVirtual: true, scale: null };
                 this.groups.forEach(g => { g.active = false; g.selected = false; });
                 this.groups.push(virtualGroup); document.getElementById('merge-confirm').classList.add('hidden'); this.draw(); this.renderUI();
             }
@@ -359,7 +367,6 @@
                 const r95 = 2.4477 * sigma;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
                 
-                // Berechnung der Hüllkurve
                 let minX = hits[0].x, maxX = hits[0].x, minY = hits[0].y, maxY = hits[0].y;
                 hits.forEach(h => { minX = Math.min(minX, h.x); maxX = Math.max(maxX, h.x); minY = Math.min(minY, h.y); maxY = Math.max(maxY, h.y); });
                 const outline = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
@@ -379,46 +386,49 @@
                 
                 const activeG = this.activeGroup; if (!activeG) return;
                 
-                // Alle Gruppen zeichnen (aktive Gruppe fett, andere transparent)
                 this.groups.forEach(g => {
                     if (g.isVirtual) return;
+                    // FILTER: Zeichne nur Gruppen, die zum aktuellen Bildkontext gehören (Geisterbild-Fix)
+                    if (g.contextId !== this.currentContextId && g.id !== activeG.id) return;
+
                     const isActive = (g.id === activeG.id);
                     const mmp = this.getGroupMmp(g);
                     const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
                     
-                    this.ctx.globalAlpha = isActive ? 1.0 : 0.3;
-                    this.ctx.strokeStyle = isActive ? '#ef4444' : '#71717a';
+                    this.ctx.globalAlpha = isActive ? 1.0 : 0.4;
+                    this.ctx.lineWidth = 2.5; 
+                    this.ctx.strokeStyle = isActive ? '#ef4444' : '#52525b';
+                    
                     g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
                     
                     if (g.poa) {
+                        this.ctx.lineWidth = 2.0;
                         this.ctx.strokeStyle = isActive ? '#22c55e' : '#3f3f46';
                         this.ctx.beginPath(); 
-                        this.ctx.moveTo(g.poa.x-8, g.poa.y); this.ctx.lineTo(g.poa.x+8, g.poa.y); 
-                        this.ctx.moveTo(g.poa.x, g.poa.y-8); this.ctx.lineTo(g.poa.x, g.poa.y+8); this.ctx.stroke(); 
+                        this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); 
+                        this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); 
                     }
 
                     if (isActive && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g);
                         if (s) {
-                            // Hüllkurve
-                            this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; this.ctx.setLineDash([4, 4]);
+                            this.ctx.lineWidth = 2.0;
+                            this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)'; this.ctx.setLineDash([6, 4]);
                             this.ctx.strokeRect(s.outline.x, s.outline.y, s.outline.w, s.outline.h);
                             this.ctx.setLineDash([]);
-                            // R50 und POI
-                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.beginPath(); 
+                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.85)'; this.ctx.beginPath(); 
                             this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
                             this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); 
-                            this.ctx.arc(s.coi.x, s.coi.y, 2, 0, Math.PI*2); this.ctx.fill(); 
+                            this.ctx.arc(s.coi.x, s.coi.y, 3, 0, Math.PI*2); this.ctx.fill(); 
                         }
                     }
                     this.ctx.globalAlpha = 1.0;
                 });
 
-                // Raster der aktiven Gruppe
                 if (!activeG.isVirtual && activeG.scale && activeG.scale.p1 && activeG.scale.p2) {
                     const mmp = this.getGroupMmp(activeG); const gridStep = 10 / mmp;
                     if (gridStep > 4) {
-                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'; this.ctx.lineWidth = 0.5; this.ctx.beginPath();
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; this.ctx.lineWidth = 0.5; this.ctx.beginPath();
                         const anchor = activeG.poa || { x: 0, y: 0 };
                         for (let x = anchor.x; x < this.canvas.width; x += gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
                         for (let x = anchor.x - gridStep; x > 0; x -= gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
@@ -428,11 +438,10 @@
                     }
                 }
 
-                // Skalierungspunkte
                 if (activeG.scale && activeG.scale.p1) { 
-                    this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
-                    this.ctx.arc(activeG.scale.p1.x, activeG.scale.p1.y, 3, 0, Math.PI*2); 
-                    if (activeG.scale.p2) { this.ctx.lineTo(activeG.scale.p2.x, activeG.scale.p2.y); this.ctx.arc(activeG.scale.p2.x, activeG.scale.p2.y, 3, 0, Math.PI*2); } 
+                    this.ctx.lineWidth = 2.0; this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
+                    this.ctx.arc(activeG.scale.p1.x, activeG.scale.p1.y, 4, 0, Math.PI*2); 
+                    if (activeG.scale.p2) { this.ctx.lineTo(activeG.scale.p2.x, activeG.scale.p2.y); this.ctx.arc(activeG.scale.p2.x, activeG.scale.p2.y, 4, 0, Math.PI*2); } 
                     this.ctx.stroke(); 
                 }
                 this.updateStats();
@@ -458,7 +467,6 @@
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
                 const reportMmScale = this.resultZoom; const gridSpacing = 10 * reportMmScale;
                 
-                // 10mm Raster
                 ctx.strokeStyle = '#27272a'; ctx.lineWidth = 0.5; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let x = center.x - gridSpacing; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
@@ -468,7 +476,7 @@
                 
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
-                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
+                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.0; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 
                 const g = this.activeGroup; if (!g || g.hits.length === 0) return;
                 const s = this.calculateStats(g.hits, g); 
@@ -478,23 +486,23 @@
                 const ox = center.x + (g.isVirtual ? s.outline.x : (s.outline.x - g.poa.x) * mmp) * reportMmScale;
                 const oy = center.y - (g.isVirtual ? s.outline.y : (g.poa.y - s.outline.y) * mmp) * reportMmScale;
                 
-                // Hüllkurve im Bericht
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)'; ctx.setLineDash([10, 5]);
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 1.5;
                 ctx.strokeRect(ox, oy - (s.outline.h * mmp * reportMmScale), s.outline.w * mmp * reportMmScale, s.outline.h * mmp * reportMmScale);
                 ctx.setLineDash([]);
 
-                ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; 
+                ctx.lineWidth = 3.0; ctx.setLineDash([8, 6]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; 
+                ctx.strokeStyle = 'rgba(34, 211, 238, 1.0)'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 6, 0, Math.PI*2); ctx.fill();
+                ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 7, 0, Math.PI*2); ctx.fill();
                 
                 const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
                 g.hits.forEach((h, i) => { 
                     const hx = center.x + (g.isVirtual ? h.x : (h.x - g.poa.x) * mmp) * reportMmScale;
                     const hy = center.y - (g.isVirtual ? h.y : (g.poa.y - h.y) * mmp) * reportMmScale;
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); 
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); 
+                    ctx.lineWidth = 2.0; ctx.strokeStyle = '#ef4444';
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.75)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText(i+1, hx + 6, hy - 6); 
                 });
 
                 const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 640); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 640);
@@ -507,7 +515,7 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 375 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.34 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.35 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
