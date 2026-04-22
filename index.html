@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.14</title>
+    <title>ShotAnalyst v6.15</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -31,12 +31,14 @@
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
+        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.14</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.15</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
+                <!-- Sitzungssteuerung -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Sitzung</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -46,6 +48,7 @@
                     </div>
                 </section>
 
+                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
                     <div class="space-y-3">
@@ -71,6 +74,7 @@
                     </div>
                 </section>
 
+                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -80,10 +84,11 @@
                         <button id="mode-hit" onclick="app.setMode('hit')" class="text-[10px] py-2 rounded bg-red-900/20 border border-red-500/50 text-red-400 uppercase">Treffer</button>
                         <button id="mode-adjust" onclick="app.setMode('adjust')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Justieren</button>
                         <button onclick="app.undo()" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Rückgängig</button>
-                        <button onclick="app.resetCrop()" class="col-span-2 text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase hover:bg-zinc-700 transition">Zuschnitt aufheben</button>
+                        <button onclick="app.resetCrop()" class="col-span-2 text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase hover:bg-zinc-700 transition font-bold">Originalbild wiederherstellen</button>
                     </div>
                 </section>
 
+                <!-- Gruppenverwaltung -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
@@ -103,6 +108,7 @@
             </div>
         </aside>
 
+        <!-- Hauptbereich -->
         <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
@@ -129,6 +135,7 @@
                 </div>
             </div>
 
+            <!-- Ergebnis-Modus -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
@@ -201,7 +208,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.14", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.15", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -227,9 +234,15 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
-                        this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
-                        this.resetData(); // Hard Reset der Messdaten bei neuem Bild
-                        this.resizeCanvas(); this.draw(); this.renderUI(); this.showSequence();
+                        this.originalImg = tempImg; 
+                        this.croppedImg = tempImg; 
+                        this.imageHistory = []; 
+                        // Beibehalten der Daten, aber Erstellung einer neuen Gruppe
+                        this.addGroup();
+                        this.resizeCanvas(); 
+                        this.draw(); 
+                        this.renderUI(); 
+                        this.showSequence();
                     };
                     tempImg.src = event.target.result;
                 };
@@ -238,12 +251,17 @@
 
             resetCrop() {
                 if (this.originalImg) {
-                    this.croppedImg = this.originalImg; this.imageHistory = [];
-                    this.resetData(); this.resizeCanvas(); this.draw(); this.renderUI();
+                    this.croppedImg = this.originalImg; 
+                    this.imageHistory = [];
+                    // Gruppen werden NICHT zurückgesetzt
+                    this.resizeCanvas(); 
+                    this.draw(); 
+                    this.renderUI();
                 }
             }
 
             resetData() { 
+                // Manuelles Zurücksetzen (wird nur beim expliziten Löschen verwendet)
                 this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
                 this.scale = { p1: null, p2: null }; 
             }
@@ -298,7 +316,7 @@
                 const octx = off.getContext('2d');
                 octx.drawImage(this.canvas, this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h, 0, 0, off.width, off.height);
                 const ni = new Image();
-                ni.onload = () => { this.croppedImg = ni; this.cropRect = null; this.resetData(); this.resizeCanvas(); this.draw(); this.renderUI(); };
+                ni.onload = () => { this.croppedImg = ni; this.cropRect = null; this.resizeCanvas(); this.draw(); this.renderUI(); };
                 ni.src = off.toDataURL();
             }
 
@@ -375,7 +393,7 @@
                 g.hits.forEach((h, i) => { const hx = center.x + (h.x - g.poa.x) * this.mmPerPixel * curScale, hy = center.y - (g.poa.y - h.y) * this.mmPerPixel * curScale; ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, (parseFloat(document.getElementById('caliber').value)/2) * curScale, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); });
                 const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 520); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 520);
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`Zoom: ${Math.round(this.resultZoom*100)}% | v6.14`, sx + 15, sy + 505);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`Zoom: ${Math.round(this.resultZoom*100)}% | v6.15`, sx + 15, sy + 505);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
