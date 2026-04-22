@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.25</title>
+    <title>ShotAnalyst v6.26</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -13,23 +13,35 @@
         .sidebar-scroll { max-height: calc(100vh - 320px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        #stats-panel { cursor: grab; min-width: 350px; }
+        
+        /* Optimierung des Statistik-Panels gegen Zeilenumbrüche */
+        #stats-panel { cursor: grab; min-width: 380px; transition: opacity 0.2s; }
         #stats-panel:active { cursor: grabbing; }
+        .stats-row { 
+            display: grid; 
+            grid-template-columns: 1fr auto; 
+            gap: 2rem; 
+            align-items: center; 
+            white-space: nowrap; 
+            font-variant-numeric: tabular-nums;
+        }
+
         .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
         .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
-        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; white-space: nowrap; }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
+        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.25</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.26</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
+                <!-- Sitzungssteuerung -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -39,6 +51,7 @@
                     </div>
                 </section>
 
+                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
                     <div class="space-y-3">
@@ -64,6 +77,7 @@
                     </div>
                 </section>
 
+                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -77,6 +91,7 @@
                     </div>
                 </section>
 
+                <!-- Gruppenverwaltung -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
@@ -96,6 +111,7 @@
             </div>
         </aside>
 
+        <!-- Hauptbereich -->
         <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
@@ -169,7 +185,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.25", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.26", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -201,24 +217,24 @@
                         this.croppedImg = tempImg; 
                         this.imageHistory = []; 
                         
-                        // Rücksetzen der Kalibrierung und Zustände
+                        // Zwingender Reset der Kalibrierung für das neue Dokument
                         this.scale = { p1: null, p2: null };
                         this.pendingHit = null;
                         this.draggingHit = null;
                         this.cropRect = null;
                         this.cropStart = null;
                         
-                        // Deselektion vorhandener Gruppen
+                        // Deselektion vorhandener Gruppen zur Vermeidung von Fehlbedienung
                         this.groups.forEach(g => g.selected = false);
                         
-                        // Neue Gruppe anlegen falls bereits Daten existieren
+                        // Neue Gruppe vorbereiten, falls bereits Daten vorhanden sind
                         if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
                         
                         this.resizeCanvas(); 
                         this.draw(); 
                         this.renderUI(); 
 
-                        // Eingabewert leeren, um Re-Import desselben Bildes zu ermöglichen
+                        // Feld leeren für Re-Import derselben Datei
                         e.target.value = "";
                     };
                     tempImg.src = event.target.result;
@@ -239,7 +255,7 @@
 
             updateZoom(val) { this.resultZoom = parseFloat(val); document.getElementById('zoom-val').innerText = this.resultZoom.toFixed(1); if (this.viewMode === 'result') this.drawResult(); }
             startStatsDrag(e) { if (e.target.tagName === 'INPUT') return; this.isDraggingStats = true; this.dragOffset.x = e.clientX - this.statsPanel.offsetLeft; this.dragOffset.y = e.clientY - this.statsPanel.offsetTop; }
-            doStatsDrag(e) { if (!this.isDraggingStats) return; this.statsPanel.style.left = `${e.clientX - this.dragOffset.x}px`; this.statsPanel.style.top = `${e.clientY - this.statsPanel.offsetTop}px`; this.statsPanel.style.right = 'auto'; }
+            doStatsDrag(e) { if (!this.isDraggingStats) return; this.statsPanel.style.left = `${e.clientX - this.dragOffset.x}px`; this.statsPanel.style.top = `${e.clientY - this.dragOffset.y}px`; this.statsPanel.style.right = 'auto'; }
             stopStatsDrag() { this.isDraggingStats = false; }
 
             resizeCanvas() {
@@ -337,21 +353,40 @@
                 if (this.viewMode === 'result') return;
                 this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
                 if (this.croppedImg) this.ctx.drawImage(this.croppedImg, 0,0,this.canvas.width,this.canvas.height);
-                const mmp = this.mmPerPixel; const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
-                this.groups.forEach(g => {
-                    const isA = g.active; const color = isA ? '#ef4444' : 'rgba(82, 82, 91, 0.4)'; 
-                    g.hits.forEach(h => { this.ctx.strokeStyle = color; this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
-                    if (g.poa) { this.ctx.strokeStyle = isA ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; this.ctx.beginPath(); this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); }
-                    if (isA && g.hits.length >= 2) {
+                
+                const mmp = this.mmPerPixel; 
+                const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
+                
+                // ARTEFAKT-FIX: Zeichne NUR die aktive Gruppe auf dem Analyse-Canvas
+                const g = this.activeGroup;
+                if (g) {
+                    const color = '#ef4444';
+                    g.hits.forEach(h => { 
+                        this.ctx.strokeStyle = color; this.ctx.beginPath(); 
+                        this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); 
+                    });
+                    if (g.poa) { 
+                        this.ctx.strokeStyle = '#22c55e'; this.ctx.beginPath(); 
+                        this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); 
+                        this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); 
+                    }
+                    if (g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g.poa);
                         if (s) { 
                             this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.setLineDash([2, 2]); 
                             this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
-                            this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
+                            this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; 
+                            this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
                         }
                     }
-                });
-                if (this.scale.p1) { this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2); if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); } this.ctx.stroke(); }
+                }
+
+                if (this.scale.p1) { 
+                    this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
+                    this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2); 
+                    if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); } 
+                    this.ctx.stroke(); 
+                }
                 this.updateStats();
             }
 
@@ -432,7 +467,7 @@
                     ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3);
                 });
 
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.25 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.26 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
