@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.35</title>
+    <title>ShotAnalyst v6.36</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.35</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.36</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -109,6 +109,7 @@
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
+                    <!-- Fadenkreuz für präzise Positionierung -->
                     <div id="ch-v" class="absolute top-0 w-[2px] h-full bg-red-500/60 pointer-events-none hidden"></div>
                     <div id="ch-h" class="absolute left-0 w-full h-[2px] bg-red-500/60 pointer-events-none hidden"></div>
                     
@@ -172,9 +173,9 @@
             get activeGroup() { return this.groups.find(g => g.active); }
 
             getGroupMmp(group) {
-                if (!group || !group.scale || !group.scale.p1 || !group.scale.p2) return 1;
+                if (!group || !group.scale || !group.scale.p1 || !group.scale.p2) return null;
                 const pixDist = Math.hypot(group.scale.p1.x - group.scale.p2.x, group.scale.p1.y - group.scale.p2.y);
-                if (pixDist === 0) return 1;
+                if (pixDist === 0) return null;
                 return (parseFloat(document.getElementById('refMm').value) || 20) / pixDist;
             }
 
@@ -193,9 +194,9 @@
             }
 
             saveSession() {
-                const data = { version: "6.35", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.36", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung.json`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.json`; a.click();
             }
 
             loadSession(input) {
@@ -306,7 +307,10 @@
                 const rect = this.canvas.getBoundingClientRect();
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
                 document.getElementById('ch-v').style.left = x + 'px'; document.getElementById('ch-h').style.top = y + 'px';
-                if (this.mode === 'crop' && this.cropStart) { this.cropRect = { x: Math.min(x, this.cropStart.x), y: Math.min(y, this.cropStart.y), w: Math.abs(x - this.cropStart.x), h: Math.abs(y - this.cropStart.y) }; this.draw(); }
+                if (this.mode === 'crop' && this.cropStart) { 
+                    this.cropRect = { x: Math.min(x, this.cropStart.x), y: Math.min(y, this.cropStart.y), w: Math.abs(x - this.cropStart.x), h: Math.abs(y - this.cropStart.y) }; 
+                    this.draw(); 
+                }
                 else if (this.mode === 'adjust' && this.draggingHit) { this.draggingHit.x = x; this.draggingHit.y = y; this.draw(); }
             }
 
@@ -342,7 +346,7 @@
             finalizeMerge() {
                 const selectedGroups = this.groups.filter(g => g.selected);
                 const transformedHits = selectedGroups.flatMap(g => {
-                    const mmp = this.getGroupMmp(g);
+                    const mmp = this.getGroupMmp(g) || 1;
                     const poa = g.poa || { x: 0, y: 0 };
                     return g.hits.map(h => ({ x: (h.x - poa.x) * mmp, y: (poa.y - h.y) * mmp, isMetric: true }));
                 });
@@ -354,7 +358,7 @@
             calculateStats(hits, group) {
                 if (!hits || hits.length < 2) return null;
                 const isMetric = group.isVirtual;
-                const mmp = isMetric ? 1 : this.getGroupMmp(group);
+                const mmp = isMetric ? 1 : (this.getGroupMmp(group) || 1);
                 const distM = parseFloat(document.getElementById('distance').value) || 100;
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
                 const moaFactor = distM * 0.290888;
@@ -386,13 +390,13 @@
                 
                 const activeG = this.activeGroup; if (!activeG) return;
                 
+                // Zeichnen aller Gruppen im aktuellen Kontext
                 this.groups.forEach(g => {
                     if (g.isVirtual) return;
-                    // FILTER: Zeichne nur Gruppen, die zum aktuellen Bildkontext gehören (Geisterbild-Fix)
                     if (g.contextId !== this.currentContextId && g.id !== activeG.id) return;
 
                     const isActive = (g.id === activeG.id);
-                    const mmp = this.getGroupMmp(g);
+                    const mmp = this.getGroupMmp(g) || 1;
                     const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
                     
                     this.ctx.globalAlpha = isActive ? 1.0 : 0.4;
@@ -425,10 +429,14 @@
                     this.ctx.globalAlpha = 1.0;
                 });
 
-                if (!activeG.isVirtual && activeG.scale && activeG.scale.p1 && activeG.scale.p2) {
-                    const mmp = this.getGroupMmp(activeG); const gridStep = 10 / mmp;
+                // Dynamisches 10-mm-Raster
+                const mmp = this.getGroupMmp(activeG);
+                if (mmp && activeG.scale.p1 && activeG.scale.p2) {
+                    const gridStep = 10 / mmp;
                     if (gridStep > 4) {
-                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; this.ctx.lineWidth = 0.5; this.ctx.beginPath();
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)'; 
+                        this.ctx.lineWidth = 1; 
+                        this.ctx.beginPath();
                         const anchor = activeG.poa || { x: 0, y: 0 };
                         for (let x = anchor.x; x < this.canvas.width; x += gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
                         for (let x = anchor.x - gridStep; x > 0; x -= gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
@@ -438,12 +446,31 @@
                     }
                 }
 
+                // Skalierungslinie
                 if (activeG.scale && activeG.scale.p1) { 
                     this.ctx.lineWidth = 2.0; this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
                     this.ctx.arc(activeG.scale.p1.x, activeG.scale.p1.y, 4, 0, Math.PI*2); 
                     if (activeG.scale.p2) { this.ctx.lineTo(activeG.scale.p2.x, activeG.scale.p2.y); this.ctx.arc(activeG.scale.p2.x, activeG.scale.p2.y, 4, 0, Math.PI*2); } 
                     this.ctx.stroke(); 
                 }
+
+                // Zuschnittsfenster (Visualisierung während Auswahl)
+                if (this.mode === 'crop' && this.cropRect) {
+                    // Verdunkelung des Außenbereichs
+                    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.cropRect.y);
+                    this.ctx.fillRect(0, this.cropRect.y + this.cropRect.h, this.canvas.width, this.canvas.height - (this.cropRect.y + this.cropRect.h));
+                    this.ctx.fillRect(0, this.cropRect.y, this.cropRect.x, this.cropRect.h);
+                    this.ctx.fillRect(this.cropRect.x + this.cropRect.w, this.cropRect.y, this.canvas.width - (this.cropRect.x + this.cropRect.w), this.cropRect.h);
+                    
+                    // Auswahlrahmen
+                    this.ctx.strokeStyle = '#ef4444';
+                    this.ctx.lineWidth = 2;
+                    this.ctx.setLineDash([8, 4]);
+                    this.ctx.strokeRect(this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h);
+                    this.ctx.setLineDash([]);
+                }
+
                 this.updateStats();
             }
 
@@ -482,7 +509,7 @@
                 const s = this.calculateStats(g.hits, g); 
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
                 
-                const mmp = g.isVirtual ? 1 : this.getGroupMmp(g);
+                const mmp = g.isVirtual ? 1 : (this.getGroupMmp(g) || 1);
                 const ox = center.x + (g.isVirtual ? s.outline.x : (s.outline.x - g.poa.x) * mmp) * reportMmScale;
                 const oy = center.y - (g.isVirtual ? s.outline.y : (g.poa.y - s.outline.y) * mmp) * reportMmScale;
                 
@@ -515,7 +542,7 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 375 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.35 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.36 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
@@ -523,7 +550,7 @@
             exportCSV() {
                 let c = "\ufeffName;n;X_mm;Y_mm\n";
                 this.groups.forEach(g => {
-                    const isMetric = g.isVirtual; const mmp = isMetric ? 1 : this.getGroupMmp(g); const poa = g.poa || {x:0, y:0};
+                    const isMetric = g.isVirtual; const mmp = isMetric ? 1 : (this.getGroupMmp(g) || 1); const poa = g.poa || {x:0, y:0};
                     g.hits.forEach((h, i) => {
                         const dx = isMetric ? h.x : (h.x - poa.x) * mmp;
                         const dy = isMetric ? h.y : (poa.y - h.y) * mmp;
@@ -539,7 +566,7 @@
                 this.groups.forEach(g => {
                     const d = document.createElement('div'); d.className = `flex items-center gap-2 p-1 rounded transition ${g.active ? 'bg-red-500/5 ring-1 ring-red-500/30' : ''}`;
                     const label = document.createElement('div'); label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center ${g.active ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800'}`;
-                    label.onclick = () => this.selectGroup(g.id); label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold">${g.name}</span><span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 px-1">✕</button>`;
+                    label.onclick = () => this.selectGroup(g.id); label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold">${g.name}</span><span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 px-1 transition-colors">✕</button>`;
                     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'w-4 h-4 rounded-full border-zinc-700 bg-zinc-800 text-red-600'; cb.checked = g.selected; cb.onchange = () => this.toggleSelection(g.id);
                     d.appendChild(cb); d.appendChild(label); list.appendChild(d);
                 });
