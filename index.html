@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.16</title>
+    <title>ShotAnalyst v6.18</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -23,14 +23,12 @@
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
-        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.16</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.18</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
-                <!-- Sitzungssteuerung -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -40,7 +38,6 @@
                     </div>
                 </section>
 
-                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
                     <div class="space-y-3">
@@ -66,7 +63,6 @@
                     </div>
                 </section>
 
-                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -80,7 +76,6 @@
                     </div>
                 </section>
 
-                <!-- Gruppenverwaltung -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
@@ -100,9 +95,7 @@
             </div>
         </aside>
 
-        <!-- Hauptbereich -->
         <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
-            <!-- Analyse-Modus -->
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
@@ -127,21 +120,19 @@
                 </div>
             </div>
 
-            <!-- Ergebnis-Modus (Vektorbasiert) -->
             <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
                 <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
                 </div>
                 <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-zinc-900/80 border border-zinc-700 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50">
                     <div class="flex justify-between text-[10px] uppercase text-zinc-500 font-bold">
-                        <span>Skalierung (Vektor)</span>
+                        <span>Vektor-Skalierung</span>
                         <span id="zoom-val">100%</span>
                     </div>
                     <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="1" class="zoom-slider" oninput="app.updateZoom(this.value)">
                 </div>
             </div>
             
-            <!-- Statistik (verschiebbar) -->
             <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden select-none z-40">
                 <div class="flex justify-between items-center border-b border-zinc-700 pb-1 mb-3">
                     <h3 class="text-xs font-bold text-red-500 uppercase">Analyseergebnisse</h3>
@@ -188,7 +179,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.16", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.18", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -204,7 +195,7 @@
                         document.getElementById('caliber').value = data.caliber;
                         this.scale = data.scale; this.groups = data.groups;
                         this.draw(); this.renderUI();
-                    } catch (err) { console.error("Datenkorruption in Sitzungsdatei", err); }
+                    } catch (err) { console.error("Ladefehler", err); }
                 };
                 reader.readAsText(file); input.value = "";
             }
@@ -214,19 +205,9 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
-                        this.originalImg = tempImg; 
-                        this.croppedImg = tempImg; 
-                        this.imageHistory = []; 
-                        
-                        // Nur neue Gruppe erstellen, wenn Daten vorhanden sind
-                        const hasData = this.groups.some(g => g.hits.length > 0);
-                        if (hasData) {
-                            this.addGroup();
-                        }
-                        
-                        this.resizeCanvas(); 
-                        this.draw(); 
-                        this.renderUI(); 
+                        this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
+                        if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
+                        this.resizeCanvas(); this.draw(); this.renderUI(); 
                     };
                     tempImg.src = event.target.result;
                 };
@@ -235,11 +216,8 @@
 
             resetCrop() {
                 if (this.originalImg) {
-                    this.croppedImg = this.originalImg; 
-                    this.imageHistory = [];
-                    this.resizeCanvas(); 
-                    this.draw(); 
-                    this.renderUI();
+                    this.croppedImg = this.originalImg; this.imageHistory = [];
+                    this.resizeCanvas(); this.draw(); this.renderUI();
                 }
             }
 
@@ -319,17 +297,36 @@
                 if (hits.length < 1) return null;
                 const mmp = this.mmPerPixel; const distM = parseFloat(document.getElementById('distance').value) || 100;
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
+                
+                // Winkelberechnungsfaktor (MOA)
+                const moaFactor = distM * 0.290888;
+
+                // Streuungsmaße
                 let es = 0; if (hits.length > 1) { for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y)); }
+                const esMm = es * mmp;
+                const esMoa = esMm / moaFactor;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length;
-                const dists = hits.map(h => Math.hypot(h.x - coi.x, h.y - coi.y));
-                const r50 = this.getPercentile(dists, 0.5); const r95 = this.getPercentile(dists, 0.95);
+                
+                // Radiale Distanzen vom TPZ
+                const dists = hits.map(h => Math.hypot(h.x - coi.x, h.y - coi.y) * mmp);
+                const r50 = this.getPercentile(dists, 0.5); 
+                const r95 = this.getPercentile(dists, 0.95);
+                
+                // Standardabweichung (SA)
+                let sa = 0;
+                if (hits.length > 1) {
+                    const sumSq = dists.reduce((a, d) => a + d*d, 0);
+                    sa = Math.sqrt(sumSq / (hits.length - 1));
+                }
+                const saMoa = sa / moaFactor;
+
                 let vector = "--", clicks = "--", dx = 0, dy = 0;
                 if (poa) {
                     dx = (coi.x - poa.x) * mmp; dy = (poa.y - coi.y) * mmp;
                     vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                     const mmC = distM * 0.1; clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
                 }
-                return { es: (es*mmp).toFixed(2), mr: (mr*mmp).toFixed(2), r50: (r50*mmp).toFixed(2), r95: (r95*mmp).toFixed(2), vector, clicks, coi, dx, dy, r50px: r50, r95px: r95 };
+                return { es: esMm.toFixed(2), esMoa: esMoa.toFixed(3), mr: (mr*mmp).toFixed(2), sa: sa.toFixed(2), saMoa: saMoa.toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50px: r50/mmp, r95px: r95/mmp };
             }
 
             draw() {
@@ -353,7 +350,17 @@
             updateStats() {
                 const s = this.calculateStats(this.activeGroup?.hits || [], this.activeGroup?.poa);
                 const p = document.getElementById('stats-panel');
-                if (s) { p.classList.remove('hidden'); document.getElementById('stats-content').innerHTML = `<div class="flex justify-between"><span>ES:</span> <span>${s.es} mm</span></div><div class="flex justify-between"><span>MR:</span> <span>${s.mr} mm</span></div><div class="flex justify-between"><span>R50:</span> <span>${s.r50} mm</span></div><div class="flex justify-between"><span>R95:</span> <span>${s.r95} mm</span></div><div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div><div class="mt-2 text-cyan-400 font-bold border border-cyan-500/20 p-2 bg-cyan-500/5 rounded text-center">MIL: ${s.clicks}</div>`; } else p.classList.add('hidden');
+                if (s) { 
+                    p.classList.remove('hidden'); 
+                    document.getElementById('stats-content').innerHTML = `
+                        <div class="flex justify-between"><span>Extremstreuung:</span> <span>${s.es} mm (${s.esMoa} MOA)</span></div>
+                        <div class="flex justify-between"><span>Mittlerer Radius:</span> <span>${s.mr} mm</span></div>
+                        <div class="flex justify-between text-cyan-400"><span>Standardabw.:</span> <span>${s.sa} mm (${s.saMoa} MOA)</span></div>
+                        <div class="flex justify-between"><span>R50:</span> <span>${s.r50} mm</span></div>
+                        <div class="flex justify-between"><span>R95:</span> <span>${s.r95} mm</span></div>
+                        <div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div>
+                        <div class="mt-2 text-cyan-400 font-bold border border-cyan-500/20 p-2 bg-cyan-500/5 rounded text-center">MIL: ${s.clicks}</div>`; 
+                } else p.classList.add('hidden');
             }
 
             drawResult() {
@@ -364,14 +371,40 @@
                 ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 const g = this.activeGroup; if (!g || g.hits.length === 0 || !g.poa) return;
                 const s = this.calculateStats(g.hits, g.poa); const coiX = center.x + s.dx * curScale, coiY = center.y - s.dy * curScale;
-                ctx.lineWidth = 3; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * curScale, 0, Math.PI*2); ctx.stroke();
-                ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * curScale, 0, Math.PI*2); ctx.stroke();
+                
+                ctx.lineWidth = 3; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; ctx.beginPath(); ctx.arc(coiX, coiY, s.r95px * curScale, 0, Math.PI*2); ctx.stroke();
+                ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; ctx.beginPath(); ctx.arc(coiX, coiY, s.r50px * curScale, 0, Math.PI*2); ctx.stroke();
+                
                 ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 6, 0, Math.PI*2); ctx.fill();
                 const calHalf = (parseFloat(document.getElementById('caliber').value)/2) * curScale;
-                g.hits.forEach((h, i) => { const hx = center.x + (h.x - g.poa.x) * this.mmPerPixel * curScale, hy = center.y - (g.poa.y - h.y) * this.mmPerPixel * curScale; ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalf, 0, Math.PI*2); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); });
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 520); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 520);
+                g.hits.forEach((h, i) => { 
+                    const hx = center.x + (h.x - g.poa.x) * this.mmPerPixel * curScale, hy = center.y - (g.poa.y - h.y) * this.mmPerPixel * curScale; 
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalf, 0, Math.PI*2); ctx.fill(); 
+                    ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); 
+                });
+
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 580); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 580);
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`Zoom: ${Math.round(this.resultZoom*100)}% | v6.16`, sx + 15, sy + 505);
+                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; 
+                ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${g.hits.length}`, sx + 15, sy + 65);
+                
+                const report = [ 
+                    ["Extremstreuung", s.es + " mm"], 
+                    ["ES in MOA", s.esMoa + " MOA"],
+                    ["Mittlerer Radius", s.mr + " mm"], 
+                    ["Std.-Abweichung", s.sa + " mm"],
+                    ["SA in MOA", s.saMoa + " MOA"],
+                    ["R50 (50% Vertr.)", s.r50 + " mm"], 
+                    ["R95 (95% Vertr.)", s.r95 + " mm"],
+                    ["Abweichung X/Y", s.vector]
+                ];
+                report.forEach((item, i) => { 
+                    ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); 
+                    ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 100 + (i*20)); ctx.textAlign = "left"; 
+                });
+                
+                ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 280); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 300);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.18 | ${Math.round(this.resultZoom*100)}% Zoom`, sx + 15, sy + 565);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Report_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
