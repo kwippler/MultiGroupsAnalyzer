@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.40 (Printable)</title>
+    <title>ShotAnalyst v6.41</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-300 flex flex-col no-cursor bg-zinc-50 z-10">
             <div class="p-4 border-b border-zinc-300">
-                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.40</span></h1>
+                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.41</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -116,25 +116,14 @@
                         <button onclick="app.confirmHit()" class="bg-green-600 text-white px-4 py-1 text-[10px] uppercase font-bold rounded hover:bg-green-700">Bestätigen</button>
                         <button onclick="app.cancelHit()" class="bg-zinc-200 text-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbruch</button>
                     </div>
-
-                    <div id="merge-confirm" class="absolute inset-0 bg-black/20 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
-                        <div class="bg-white border border-zinc-300 p-6 rounded-lg shadow-2xl max-w-sm text-center">
-                            <h3 class="text-red-600 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
-                            <p class="text-xs text-zinc-600 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
-                            <div class="flex gap-2 justify-center">
-                                <button onclick="app.finalizeMerge()" class="bg-red-600 text-white px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-red-700">Erstellen</button>
-                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbrechen</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
-            <div id="view-result" class="hidden absolute inset-0 bg-zinc-100 flex flex-col items-center justify-center p-8">
-                <div class="relative bg-white border border-zinc-300 rounded-lg shadow-xl overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
+            <div id="view-result" class="hidden absolute inset-0 bg-white flex flex-col items-center justify-center p-8">
+                <div class="relative bg-white border border-zinc-200 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
                 </div>
-                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-white/90 border border-zinc-300 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50 shadow-md">
+                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-white/95 border border-zinc-300 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50 shadow-md">
                     <div class="flex justify-between text-[10px] uppercase text-zinc-600 font-bold">
                         <span>Vektorskalierung</span>
                         <span id="zoom-val">2.0</span>
@@ -193,9 +182,9 @@
             }
 
             saveSession() {
-                const data = { version: "6.40", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.41", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung.json`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.json`; a.click();
             }
 
             loadSession(input) {
@@ -401,13 +390,13 @@
                     
                     this.ctx.globalAlpha = isActive ? 1.0 : 0.5;
                     this.ctx.lineWidth = 2.5; 
-                    this.ctx.strokeStyle = isActive ? '#dc2626' : '#71717a'; // Darker red for active, dark grey for inactive
+                    this.ctx.strokeStyle = isActive ? '#dc2626' : '#71717a'; 
                     
                     g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
                     
                     if (g.poa) {
                         this.ctx.lineWidth = 3.0;
-                        this.ctx.strokeStyle = isActive ? '#15803d' : '#52525b'; // Dark green for active POA
+                        this.ctx.strokeStyle = isActive ? '#15803d' : '#52525b'; 
                         this.ctx.beginPath(); 
                         this.ctx.moveTo(g.poa.x-12, g.poa.y); this.ctx.lineTo(g.poa.x+12, g.poa.y); 
                         this.ctx.moveTo(g.poa.x, g.poa.y-12); this.ctx.lineTo(g.poa.x, g.poa.y+12); this.ctx.stroke(); 
@@ -416,19 +405,18 @@
                     if (isActive && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g);
                         if (s) {
-                            // Hüllrechteck (H/V) - Korrigiert auf Außenkanten (Kaliber berücksichtigt)
-                            const calPx = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
-                            const offset = calPx / 2;
+                            // Hüllrechteck (Bounding Box) - GEOMETRISCH KORREKT AUF MITTEN
                             this.ctx.lineWidth = 3.0;
-                            this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.8)'; // Darker red
+                            this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)'; 
                             this.ctx.setLineDash([10, 6]);
-                            this.ctx.strokeRect(s.outline.x - offset, s.outline.y - offset, s.outline.w + calPx, s.outline.h + calPx);
+                            // Zeichnet exakt durch die Zentren (minX/minY bis maxX/maxY)
+                            this.ctx.strokeRect(s.outline.x, s.outline.y, s.outline.w, s.outline.h);
                             this.ctx.setLineDash([]);
                             
-                            this.ctx.strokeStyle = 'rgba(8, 145, 178, 0.9)'; // Darker cyan
+                            this.ctx.strokeStyle = 'rgba(8, 145, 178, 0.9)'; 
                             this.ctx.lineWidth = 2.0; 
                             this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
-                            this.ctx.fillStyle = '#0891b2'; // Darker cyan fill
+                            this.ctx.fillStyle = '#0891b2'; 
                             this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 4, 0, Math.PI*2); this.ctx.fill(); 
                         }
                     }
@@ -490,23 +478,20 @@
 
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
-                // 1. Weißer Hintergrund für Druck
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
                 const reportMmScale = this.resultZoom; 
                 const gridSpacing = 10 * reportMmScale;
                 
-                // 2. Dunkelgraues Raster
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; ctx.lineWidth = 1; ctx.beginPath();
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'; ctx.lineWidth = 1; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let x = center.x - gridSpacing; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 for (let y = center.y - gridSpacing; y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 ctx.stroke();
                 
-                // 3. Schwarze Ringe und Dunkelgrünes Fadenkreuz
-                ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
+                ctx.strokeStyle = '#27272a'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
-                ctx.strokeStyle = '#15803d'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
+                ctx.strokeStyle = '#166534'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 
                 const g = this.activeGroup; if (!g || g.hits.length === 0) return;
                 const s = this.calculateStats(g.hits, g); 
@@ -515,27 +500,27 @@
                 const ox = center.x + (g.isVirtual ? s.outline.x : (s.outline.x - g.poa.x) * mmp) * reportMmScale;
                 const oy = center.y - (g.isVirtual ? s.outline.y : (g.poa.y - s.outline.y) * mmp) * reportMmScale;
                 
-                // 4. Dunkelrote/Blaue Analyse-Elemente
-                ctx.strokeStyle = 'rgba(220, 38, 38, 0.6)'; ctx.setLineDash([14, 8]); ctx.lineWidth = 2.0;
+                // Box im Bericht (Geometrisch auf Mitten)
+                ctx.strokeStyle = 'rgba(185, 28, 28, 0.5)'; ctx.setLineDash([14, 8]); ctx.lineWidth = 2.0;
                 ctx.strokeRect(ox, oy - (s.outline.h * mmp * reportMmScale), s.outline.w * mmp * reportMmScale, s.outline.h * mmp * reportMmScale);
                 ctx.setLineDash([]);
-                ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = '#dc2626'; 
+                
+                ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = '#991b1b'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.strokeStyle = '#0891b2'; 
+                ctx.strokeStyle = '#0e7490'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.setLineDash([]); ctx.fillStyle = '#0891b2'; ctx.beginPath(); ctx.arc(coiX, coiY, 8, 0, Math.PI*2); ctx.fill();
+                ctx.setLineDash([]); ctx.fillStyle = '#0e7490'; ctx.beginPath(); ctx.arc(coiX, coiY, 8, 0, Math.PI*2); ctx.fill();
                 
                 const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
                 g.hits.forEach((h, i) => { 
                     const hx = center.x + (g.isVirtual ? h.x : (h.x - g.poa.x) * mmp) * reportMmScale;
                     const hy = center.y - (g.isVirtual ? h.y : (g.poa.y - h.y) * mmp) * reportMmScale;
                     ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000';
-                    ctx.fillStyle = 'rgba(220, 38, 38, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = 'rgba(185, 28, 28, 0.8)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
                     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px Inter'; ctx.fillText(i+1, hx + 8, hy - 8); 
                 });
 
-                // 5. Helles Seitenpanel mit dunklem Text
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; ctx.fillRect(sx, sy, 220, 640); ctx.strokeStyle = '#52525b'; ctx.strokeRect(sx, sy, 220, 640);
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(255, 255, 255, 0.98)'; ctx.fillRect(sx, sy, 220, 640); ctx.strokeStyle = '#27272a'; ctx.strokeRect(sx, sy, 220, 640);
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#52525b'; ctx.font = '10px Inter'; 
                 ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Stichprobe (n): ${g.hits.length}`, sx + 15, sy + 65);
@@ -553,9 +538,9 @@
                 report.forEach((item, i) => { ctx.fillStyle = '#52525b'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); ctx.fillStyle = '#000000'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 100 + (i*20)); ctx.textAlign = "left"; });
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 300); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 320);
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
-                const leg = [ { t: "Haltepunkt (POA)", c: "#15803d", l: false }, { t: "Schwerpunkt (POI)", c: "#0891b2", l: false }, { t: "R50 (Streukreis)", c: "#0891b2", l: true }, { t: "R95 (Streukreis)", c: "#dc2626", l: true } ];
+                const leg = [ { t: "Haltepunkt (POA)", c: "#166534", l: false }, { t: "Schwerpunkt (POI)", c: "#0e7490", l: false }, { t: "R50 (Streukreis)", c: "#0e7490", l: true }, { t: "R95 (Streukreis)", c: "#991b1b", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#52525b'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.40 (Print) | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.41 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
@@ -571,7 +556,7 @@
                     });
                 });
                 const blob = new Blob([c], { type: 'text/csv;charset=utf-8;' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Messwerte.csv`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.csv`; a.click();
             }
 
             renderUI() {
