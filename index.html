@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.21</title>
+    <title>ShotAnalyst v6.22</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -13,26 +13,23 @@
         .sidebar-scroll { max-height: calc(100vh - 320px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        #stats-panel { cursor: grab; min-width: 320px; }
+        #stats-panel { cursor: grab; min-width: 340px; }
         #stats-panel:active { cursor: grabbing; }
         .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
         .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
-        /* Unterbindung von Zeilenumbrüchen bei breiten Zahlenwerten */
-        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; white-space: nowrap; }
+        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; white-space: nowrap; }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
-        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.21</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.22</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
-                <!-- Sitzungssteuerung -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -42,7 +39,6 @@
                     </div>
                 </section>
 
-                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
                     <div class="space-y-3">
@@ -68,7 +64,6 @@
                     </div>
                 </section>
 
-                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -82,7 +77,6 @@
                     </div>
                 </section>
 
-                <!-- Gruppenverwaltung -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
@@ -94,7 +88,7 @@
             </div>
 
             <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 space-y-2">
-                <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-semibold py-2 rounded border border-zinc-700 transition">Trefferbild anzeigen</button>
+                <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-semibold py-2 rounded border border-zinc-700 transition">Analysebericht</button>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="app.exportCSV()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] py-2 rounded border border-zinc-700 uppercase">CSV Export</button>
                     <button onclick="app.savePlot()" class="w-full bg-red-600 hover:bg-red-500 text-white text-[10px] py-2 rounded font-bold uppercase transition">Bild speichern</button>
@@ -102,7 +96,6 @@
             </div>
         </aside>
 
-        <!-- Hauptbereich -->
         <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
@@ -114,17 +107,6 @@
                         <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Bestätigen</button>
                         <button onclick="app.cancelHit()" class="bg-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Abbruch</button>
                     </div>
-
-                    <div id="merge-confirm" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
-                        <div class="bg-zinc-900 border border-zinc-700 p-6 rounded-lg shadow-2xl max-w-sm text-center">
-                            <h3 class="text-red-500 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
-                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
-                            <div class="flex gap-2 justify-center">
-                                <button onclick="app.finalizeMerge()" class="bg-red-600 px-4 py-2 text-[10px] uppercase font-bold rounded">Erstellen</button>
-                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -134,7 +116,7 @@
                 </div>
                 <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-zinc-900/80 border border-zinc-700 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50">
                     <div class="flex justify-between text-[10px] uppercase text-zinc-500 font-bold">
-                        <span>Vektor-Skalierung</span>
+                        <span>Skalierung (Vektor)</span>
                         <span id="zoom-val">100%</span>
                     </div>
                     <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="1" class="zoom-slider" oninput="app.updateZoom(this.value)">
@@ -143,7 +125,7 @@
             
             <div id="stats-panel" class="absolute top-6 right-6 bg-zinc-900/95 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-md no-cursor hidden select-none z-40">
                 <div class="flex justify-between items-center border-b border-zinc-700 pb-2 mb-3">
-                    <h3 class="text-[11px] font-bold text-red-500 uppercase tracking-wider">Analyseergebnisse</h3>
+                    <h3 class="text-[11px] font-bold text-red-500 uppercase tracking-wider">Statistische Kenngrößen</h3>
                 </div>
                 <div id="stats-content" class="space-y-3 text-[11px] font-medium"></div>
             </div>
@@ -187,7 +169,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.21", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.22", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -203,7 +185,7 @@
                         document.getElementById('caliber').value = data.caliber;
                         this.scale = data.scale; this.groups = data.groups;
                         this.draw(); this.renderUI();
-                    } catch (err) { console.error("Ladefehler", err); }
+                    } catch (err) { console.error("Sitzungsfehler", err); }
                 };
                 reader.readAsText(file); input.value = "";
             }
@@ -286,7 +268,7 @@
             confirmHit() { if (this.pendingHit) { this.activeGroup.hits.push(this.pendingHit); this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); this.renderUI(); } }
             cancelHit() { this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); }
             setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400')); document.getElementById(`mode-${m}`).classList.add('bg-red-900/20', 'border-red-500/50', 'text-red-400'); }
-            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Trefferbild anzeigen" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
+            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
             toggleCrosshair(s) { const d = s && this.viewMode === 'analysis' ? 'block' : 'none'; document.getElementById('ch-v').style.display = d; document.getElementById('ch-h').style.display = d; }
             addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
@@ -299,29 +281,28 @@
                 this.groups.push(virtualGroup); document.getElementById('merge-confirm').classList.add('hidden'); this.draw(); this.renderUI();
             }
 
-            getPercentile(arr, p) { if (arr.length === 0) return 0; const s = [...arr].sort((a, b) => a - b); const index = p * (s.length - 1); const low = Math.floor(index); const high = Math.ceil(index); return low === high ? s[low] : s[low] + (s[high] - s[low]) * (index - low); }
-
             calculateStats(hits, poa) {
-                if (hits.length < 1) return null;
+                if (hits.length < 2) return null;
                 const mmp = this.mmPerPixel; const distM = parseFloat(document.getElementById('distance').value) || 100;
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
-                
                 const moaFactor = distM * 0.290888;
-                let es = 0; if (hits.length > 1) { for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y)); }
+
+                // Achsen-Varianzen (Parametrische Grundlage)
+                const varX = hits.reduce((s, h) => s + Math.pow((h.x - coi.x) * mmp, 2), 0) / (hits.length - 1);
+                const varY = hits.reduce((s, h) => s + Math.pow((h.y - coi.y) * mmp, 2), 0) / (hits.length - 1);
+                
+                // Rayleigh-Parameter Sigma (Pooled Standard Deviation)
+                const sigma = Math.sqrt((varX + varY) / 2);
+                
+                // Extremstreuung (Empirisch)
+                let es = 0; for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y));
                 const esMm = es * mmp;
-                const esMoa = esMm / moaFactor;
-                const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length;
                 
-                const dists = hits.map(h => Math.hypot(h.x - coi.x, h.y - coi.y) * mmp);
-                const r50 = this.getPercentile(dists, 0.5); 
-                const r95 = this.getPercentile(dists, 0.95);
+                // CEP Berechnung (Parametrisch nach Rayleigh/TARAN Standard)
+                const r50 = 1.1774 * sigma;
+                const r95 = 2.4477 * sigma;
                 
-                let sa = 0;
-                if (hits.length > 1) {
-                    const sumSq = dists.reduce((a, d) => a + d*d, 0);
-                    sa = Math.sqrt(sumSq / (hits.length - 1));
-                }
-                const saMoa = sa / moaFactor;
+                const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
 
                 let vector = "--", clicks = "--", dx = 0, dy = 0;
                 if (poa) {
@@ -329,7 +310,7 @@
                     vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                     const mmC = distM * 0.1; clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
                 }
-                return { es: esMm.toFixed(2), esMoa: esMoa.toFixed(3), mr: (mr*mmp).toFixed(2), sa: sa.toFixed(2), saMoa: saMoa.toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50px: r50/mmp, r95px: r95/mmp };
+                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50px: r50/mmp, r95px: r95/mmp };
             }
 
             draw() {
@@ -343,7 +324,10 @@
                     if (g.poa) { this.ctx.strokeStyle = isA ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; this.ctx.beginPath(); this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); }
                     if (isA && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g.poa);
-                        if (s) { this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.5)'; this.ctx.setLineDash([2, 2]); this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50px, 0, Math.PI*2); this.ctx.stroke(); this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); }
+                        if (s) { 
+                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.setLineDash([2, 2]); this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50px, 0, Math.PI*2); this.ctx.stroke(); 
+                            this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
+                        }
                     }
                 });
                 if (this.scale.p1) { this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); this.ctx.arc(this.scale.p1.x, this.scale.p1.y, 3, 0, Math.PI*2); if (this.scale.p2) { this.ctx.lineTo(this.scale.p2.x, this.scale.p2.y); this.ctx.arc(this.scale.p2.x, this.scale.p2.y, 3, 0, Math.PI*2); } this.ctx.stroke(); }
@@ -358,9 +342,9 @@
                     document.getElementById('stats-content').innerHTML = `
                         <div class="stats-row"><span class="text-zinc-400">Extremstreuung (ES):</span> <span class="font-bold">${s.es} mm (${s.esMoa} MOA)</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Mittlerer Radius (MR):</span> <span class="font-bold">${s.mr} mm</span></div>
-                        <div class="stats-row text-cyan-400"><span class="font-bold">Standardabw. (SA):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
-                        <div class="stats-row"><span class="text-zinc-400">R50 (Median):</span> <span class="font-bold">${s.r50} mm</span></div>
-                        <div class="stats-row"><span class="text-zinc-400">R95:</span> <span class="font-bold">${s.r95} mm</span></div>
+                        <div class="stats-row text-cyan-400"><span class="font-bold">Standardabw. (Sigma):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
+                        <div class="stats-row"><span class="text-zinc-400">Streukreis R50 (CEP):</span> <span class="font-bold">${s.r50} mm</span></div>
+                        <div class="stats-row"><span class="text-zinc-400">Streukreis R95:</span> <span class="font-bold">${s.r95} mm</span></div>
                         <div class="stats-row border-t border-zinc-800 pt-2"><span class="text-zinc-400">Treffpunktlage:</span> <span class="font-bold">${s.vector}</span></div>
                         <div class="mt-2.5 text-cyan-400 font-bold border border-cyan-500/20 py-2 px-3 bg-cyan-500/5 rounded text-center">Korrektur MIL: ${s.clicks}</div>`; 
                 } else p.classList.add('hidden');
@@ -386,19 +370,19 @@
                     ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); 
                 });
 
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 600); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 600);
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 640); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 640);
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; 
-                ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${g.hits.length}`, sx + 15, sy + 65);
+                ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Stichprobe (n): ${g.hits.length}`, sx + 15, sy + 65);
                 
                 const report = [ 
-                    ["Extremstreuung", s.es + " mm"], 
+                    ["Extremstreuung (ES)", s.es + " mm"], 
                     ["ES in MOA", s.esMoa + " MOA"],
                     ["Mittlerer Radius", s.mr + " mm"], 
-                    ["Std.-Abweichung", s.sa + " mm"],
-                    ["SA in MOA", s.saMoa + " MOA"],
-                    ["R50 (Median)", s.r50 + " mm"], 
-                    ["R95", s.r95 + " mm"],
+                    ["Standardabw. (s)", s.sa + " mm"],
+                    ["Sigma in MOA", s.saMoa + " MOA"],
+                    ["Streukreis R50", s.r50 + " mm"], 
+                    ["Streukreis R95", s.r95 + " mm"],
                     ["Treffpunktlage", s.vector]
                 ];
                 report.forEach((item, i) => { 
@@ -407,29 +391,40 @@
                 });
                 
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 280); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 300);
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.21 | ${Math.round(this.resultZoom*100)}% Vektorskalierung`, sx + 15, sy + 585);
+
+                // LEGENDE
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
+                const leg = [
+                    { t: "Haltepunkt (POA)", c: "#22c55e", l: false },
+                    { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false },
+                    { t: "R50 (Streukreis)", c: "#22d3ee", l: true },
+                    { t: "R95 (Streukreis)", c: "#ef4444", l: true }
+                ];
+                leg.forEach((item, i) => {
+                    const ly = sy + 375 + (i * 25);
+                    ctx.strokeStyle = item.c; ctx.lineWidth = 2;
+                    if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); }
+                    else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); }
+                    ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3);
+                });
+
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.22 | Vektorskalierung: ${Math.round(this.resultZoom*100)}%`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
 
             exportCSV() {
-                // Byte Order Mark (BOM) für UTF-8 (Excel-Kompatibilität)
                 let c = "\ufeffName;n;X_mm;Y_mm\n";
                 this.groups.forEach(g => {
                     const p = g.poa || {x:0, y:0};
                     g.hits.forEach((h, i) => {
-                        // Dezimalkomma-Anpassung für deutsche Tabellenkalkulationen
                         const dx = ((h.x - p.x) * this.mmPerPixel).toFixed(4).replace('.', ',');
                         const dy = ((p.y - h.y) * this.mmPerPixel).toFixed(4).replace('.', ',');
                         c += `${g.name};${i+1};${dx};${dy}\n`;
                     });
                 });
                 const blob = new Blob([c], { type: 'text/csv;charset=utf-8;' });
-                const u = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = u;
-                a.download = `ShotAnalyst_Export_${new Date().toISOString().slice(0,10)}.csv`;
-                a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.csv`; a.click();
             }
 
             renderUI() {
