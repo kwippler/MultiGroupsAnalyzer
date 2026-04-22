@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.42</title>
+    <title>ShotAnalyst v6.43</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-300 flex flex-col no-cursor bg-zinc-50 z-10">
             <div class="p-4 border-b border-zinc-300">
-                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.42</span></h1>
+                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.43</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -116,6 +116,17 @@
                         <button onclick="app.confirmHit()" class="bg-green-600 text-white px-4 py-1 text-[10px] uppercase font-bold rounded hover:bg-green-700">Bestätigen</button>
                         <button onclick="app.cancelHit()" class="bg-zinc-200 text-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbruch</button>
                     </div>
+
+                    <div id="merge-confirm" class="absolute inset-0 bg-black/20 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
+                        <div class="bg-white border border-zinc-300 p-6 rounded-lg shadow-2xl max-w-sm text-center">
+                            <h3 class="text-red-600 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
+                            <p id="merge-msg" class="text-xs text-zinc-600 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
+                            <div class="flex gap-2 justify-center" id="merge-actions">
+                                <button onclick="app.finalizeMerge()" class="bg-red-600 text-white px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-red-700">Erstellen</button>
+                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbrechen</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -182,7 +193,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.42", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.43", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session.json`; a.click();
             }
@@ -329,18 +340,52 @@
             addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), contextId: this.currentContextId, name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
             toggleSelection(id) { const g = this.groups.find(x => x.id === id); if (g) g.selected = !g.selected; this.renderUI(); }
-            requestMerge() { if (this.groups.filter(g => g.selected).length >= 2) document.getElementById('merge-confirm').classList.remove('hidden'); }
+            
+            requestMerge() { 
+                const selected = this.groups.filter(g => g.selected);
+                const invalid = selected.filter(g => !g.poa || !this.getGroupMmp(g));
+                const modal = document.getElementById('merge-confirm');
+                const msg = document.getElementById('merge-msg');
+                const actions = document.getElementById('merge-actions');
+                
+                if (invalid.length > 0) {
+                    msg.innerHTML = `<span class="text-red-600 font-bold">Fehler:</span><br>Einige Gruppen (${invalid.map(x=>x.name).join(', ')}) verfügen über keine gültige Skalierung oder keinen Haltepunkt. Eine metrische Zusammenführung ist nicht möglich.`;
+                    actions.innerHTML = `<button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">OK</button>`;
+                } else {
+                    msg.innerText = `Soll aus den selektierten Elementen (${selected.length} Gruppen) eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?`;
+                    actions.innerHTML = `<button onclick="app.finalizeMerge()" class="bg-red-600 text-white px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-red-700">Erstellen</button>
+                                         <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>`;
+                }
+                modal.classList.remove('hidden'); 
+            }
             
             finalizeMerge() {
                 const selectedGroups = this.groups.filter(g => g.selected);
                 const transformedHits = selectedGroups.flatMap(g => {
-                    const mmp = this.getGroupMmp(g) || 1;
-                    const poa = g.poa || { x: 0, y: 0 };
-                    return g.hits.map(h => ({ x: (h.x - poa.x) * mmp, y: (poa.y - h.y) * mmp, isMetric: true }));
+                    const mmp = this.getGroupMmp(g);
+                    const poa = g.poa;
+                    // Transformation in mm-Raum relativ zum jeweiligen Haltepunkt
+                    return g.hits.map(h => ({ 
+                        x: (h.x - poa.x) * mmp, 
+                        y: (poa.y - h.y) * mmp, 
+                        isMetric: true 
+                    }));
                 });
-                const virtualGroup = { id: Date.now(), contextId: null, name: `Verbund (${selectedGroups.length} El.)`, hits: transformedHits, poa: { x: 0, y: 0 }, active: true, selected: false, isVirtual: true, scale: null };
+                const virtualGroup = { 
+                    id: Date.now(), 
+                    contextId: null, 
+                    name: `Verbund (${selectedGroups.length} El.)`, 
+                    hits: transformedHits, 
+                    poa: { x: 0, y: 0 }, 
+                    active: true, 
+                    selected: false, 
+                    isVirtual: true, 
+                    scale: null 
+                };
                 this.groups.forEach(g => { g.active = false; g.selected = false; });
-                this.groups.push(virtualGroup); document.getElementById('merge-confirm').classList.add('hidden'); this.draw(); this.renderUI();
+                this.groups.push(virtualGroup);
+                document.getElementById('merge-confirm').classList.add('hidden');
+                this.draw(); this.renderUI();
             }
 
             calculateStats(hits, group) {
@@ -350,10 +395,18 @@
                 const distM = parseFloat(document.getElementById('distance').value) || 100;
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
                 const moaFactor = distM * 0.290888;
+                
+                let es = 0, esP1 = null, esP2 = null;
+                for(let i=0; i<hits.length; i++) {
+                    for(let j=i+1; j<hits.length; j++) {
+                        let d = Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y);
+                        if(d > es) { es = d; esP1 = hits[i]; esP2 = hits[j]; }
+                    }
+                }
+
                 const varX = hits.reduce((s, h) => s + Math.pow((h.x - coi.x) * mmp, 2), 0) / (hits.length - 1);
                 const varY = hits.reduce((s, h) => s + Math.pow((h.y - coi.y) * mmp, 2), 0) / (hits.length - 1);
                 const sigma = Math.sqrt((varX + varY) / 2);
-                let es = 0; for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y));
                 const esMm = es * mmp;
                 const r50 = 1.1774 * sigma;
                 const r95 = 2.4477 * sigma;
@@ -370,7 +423,7 @@
                 const vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                 const mmC = distM * 0.1;
                 const clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
-                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50val: r50, r95val: r95, outline, wMm: wMm.toFixed(2), hMm: hMm.toFixed(2) };
+                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50val: r50, r95val: r95, outline, wMm: wMm.toFixed(2), hMm: hMm.toFixed(2), esP1, esP2 };
             }
 
             draw() {
@@ -405,7 +458,18 @@
                     if (isActive && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g);
                         if (s) {
-                            // Hüllrechteck (Bounding Box) - GEOMETRISCH KORREKT DURCH DIE MITTEN
+                            // ES Verbindungslinie
+                            if (s.esP1 && s.esP2) {
+                                this.ctx.beginPath();
+                                this.ctx.setLineDash([5, 5]);
+                                this.ctx.strokeStyle = 'rgba(153, 27, 27, 0.4)';
+                                this.ctx.moveTo(s.esP1.x, s.esP1.y);
+                                this.ctx.lineTo(s.esP2.x, s.esP2.y);
+                                this.ctx.stroke();
+                                this.ctx.setLineDash([]);
+                            }
+
+                            // Hüllrechteck (Bounding Box)
                             this.ctx.lineWidth = 2.5;
                             this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)'; 
                             this.ctx.setLineDash([8, 4]);
@@ -497,17 +561,26 @@
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
                 const mmp = g.isVirtual ? 1 : (this.getGroupMmp(g) || 1);
                 
-                // KOORDINATEN FÜR DAS RECHTECK (STARTPUNKT OBEN LINKS)
-                const dy_top = (g.poa ? (g.poa.y - s.outline.y) * mmp : 0);
-                const dx_left = (g.poa ? (s.outline.x - g.poa.x) * mmp : 0);
+                const dy_top = (g.isVirtual ? s.outline.y : (g.poa ? (g.poa.y - s.outline.y) * mmp : 0));
+                const dx_left = (g.isVirtual ? s.outline.x : (g.poa ? (s.outline.x - g.poa.x) * mmp : 0));
                 
                 const boxX = center.x + dx_left * reportMmScale;
                 const boxY = center.y - dy_top * reportMmScale;
                 const boxW = s.outline.w * mmp * reportMmScale;
                 const boxH = s.outline.h * mmp * reportMmScale;
 
-                // RECHTECK IM BERICHT - KORREKTUR POSITIONIERUNG
-                ctx.strokeStyle = 'rgba(185, 28, 28, 0.5)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 2.0;
+                // ES Linie im Bericht
+                if (s.esP1 && s.esP2) {
+                    const esP1x = center.x + (g.isVirtual ? s.esP1.x : (s.esP1.x - g.poa.x) * mmp) * reportMmScale;
+                    const esP1y = center.y - (g.isVirtual ? s.esP1.y : (g.poa.y - s.esP1.y) * mmp) * reportMmScale;
+                    const esP2x = center.x + (g.isVirtual ? s.esP2.x : (s.esP2.x - g.poa.x) * mmp) * reportMmScale;
+                    const esP2y = center.y - (g.isVirtual ? s.esP2.y : (g.poa.y - s.esP2.y) * mmp) * reportMmScale;
+                    
+                    ctx.beginPath(); ctx.setLineDash([8, 8]); ctx.strokeStyle = 'rgba(153, 27, 27, 0.4)'; ctx.lineWidth = 1.5;
+                    ctx.moveTo(esP1x, esP1y); ctx.lineTo(esP2x, esP2y); ctx.stroke(); ctx.setLineDash([]);
+                }
+
+                ctx.strokeStyle = 'rgba(185, 28, 28, 0.4)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 2.0;
                 ctx.strokeRect(boxX, boxY, boxW, boxH);
                 ctx.setLineDash([]);
                 
@@ -521,7 +594,7 @@
                 g.hits.forEach((h, i) => { 
                     const hx = center.x + (g.isVirtual ? h.x : (h.x - g.poa.x) * mmp) * reportMmScale;
                     const hy = center.y - (g.isVirtual ? h.y : (g.poa.y - h.y) * mmp) * reportMmScale;
-                    ctx.lineWidth = 2.0; ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 1.5; ctx.strokeStyle = '#000000';
                     ctx.fillStyle = 'rgba(185, 28, 28, 0.85)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
                     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px Inter'; ctx.fillText(i+1, hx + 8, hy - 8); 
                 });
@@ -546,7 +619,7 @@
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#166534", l: false }, { t: "Schwerpunkt (POI)", c: "#0e7490", l: false }, { t: "R50 (Streukreis)", c: "#0e7490", l: true }, { t: "R95 (Streukreis)", c: "#991b1b", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#52525b'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.42 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.43 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
