@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.41</title>
+    <title>ShotAnalyst v6.42</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,12 +35,12 @@
         
         <aside class="w-80 border-r border-zinc-300 flex flex-col no-cursor bg-zinc-50 z-10">
             <div class="p-4 border-b border-zinc-300">
-                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.41</span></h1>
+                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.42</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Sitzungsdaten</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-500">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="app.saveSession()" class="bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded transition border border-zinc-300 uppercase font-bold">Speichern</button>
                         <button onclick="document.getElementById('sessionLoadInput').click()" class="bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded transition border border-zinc-300 uppercase font-bold">Laden</button>
@@ -49,7 +49,7 @@
                 </section>
 
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Systemparameter</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-500">Systemparameter</h2>
                     <div class="space-y-3">
                         <button onclick="document.getElementById('fileInput').click()" class="w-full bg-white hover:bg-zinc-100 text-zinc-700 text-sm py-2 rounded transition border border-zinc-300 font-bold">Bild importieren</button>
                         <input type="file" id="fileInput" class="hidden" accept="image/*">
@@ -74,7 +74,7 @@
                 </section>
 
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Arbeitsmodi</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-500">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
                         <button id="mode-crop" onclick="app.setMode('crop')" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Zuschnitt</button>
                         <button id="mode-scale" onclick="app.setMode('scale')" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Skalierung</button>
@@ -97,10 +97,10 @@
             </div>
 
             <div class="p-4 border-t border-zinc-300 bg-zinc-100 space-y-2">
-                <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2 rounded border border-zinc-700 transition">Analysebericht (Druckansicht)</button>
+                <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2 rounded border border-zinc-700 transition">Analysebericht (Druck)</button>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="app.exportCSV()" class="w-full bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded border border-zinc-300 uppercase">CSV Export</button>
-                    <button onclick="app.savePlot()" class="w-full bg-red-600 hover:bg-red-700 text-white text-[10px] py-2 rounded font-bold uppercase transition">Bild speichern</button>
+                    <button onclick="app.savePlot()" class="w-full bg-red-600 hover:bg-red-700 text-white text-[10px] py-2 rounded font-bold uppercase transition">Bericht speichern</button>
                 </div>
             </div>
         </aside>
@@ -125,7 +125,7 @@
                 </div>
                 <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-white/95 border border-zinc-300 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50 shadow-md">
                     <div class="flex justify-between text-[10px] uppercase text-zinc-600 font-bold">
-                        <span>Vektorskalierung</span>
+                        <span>Skalierung</span>
                         <span id="zoom-val">2.0</span>
                     </div>
                     <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="2" class="zoom-slider" oninput="app.updateZoom(this.value)">
@@ -134,7 +134,7 @@
             
             <div id="stats-panel" class="absolute top-6 right-6 bg-white/95 border border-zinc-300 p-4 rounded shadow-xl backdrop-blur-md no-cursor hidden select-none z-40 text-zinc-900">
                 <div class="flex justify-between items-center border-b border-zinc-200 pb-2 mb-3">
-                    <h3 class="text-[11px] font-bold text-red-600 uppercase tracking-wider">Statistische Kenngrößen</h3>
+                    <h3 class="text-[11px] font-bold text-red-600 uppercase tracking-wider">Statistik</h3>
                 </div>
                 <div id="stats-content" class="space-y-3 text-[11px] font-medium"></div>
             </div>
@@ -182,9 +182,9 @@
             }
 
             saveSession() {
-                const data = { version: "6.41", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.42", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.json`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session.json`; a.click();
             }
 
             loadSession(input) {
@@ -324,7 +324,7 @@
             confirmHit() { if (this.pendingHit) { this.activeGroup.hits.push(this.pendingHit); this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); this.renderUI(); } }
             cancelHit() { this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); }
             setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-50', 'border-red-200', 'text-red-600', 'bg-white', 'border-zinc-300', 'text-zinc-700', 'hover:bg-zinc-100')); document.getElementById(`mode-${m}`).classList.add('bg-red-50', 'border-red-200', 'text-red-600'); document.querySelectorAll('[id^="mode-"]:not(#' + `mode-${m}` + ')').forEach(b => b.classList.add('bg-white', 'border-zinc-300', 'text-zinc-700', 'hover:bg-zinc-100')); }
-            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht (Druckansicht)" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
+            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht (Druck)" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
             toggleCrosshair(s) { const d = s && this.viewMode === 'analysis' ? 'block' : 'none'; document.getElementById('ch-v').style.display = d; document.getElementById('ch-h').style.display = d; }
             addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), contextId: this.currentContextId, name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
@@ -405,11 +405,10 @@
                     if (isActive && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g);
                         if (s) {
-                            // Hüllrechteck (Bounding Box) - GEOMETRISCH KORREKT AUF MITTEN
-                            this.ctx.lineWidth = 3.0;
+                            // Hüllrechteck (Bounding Box) - GEOMETRISCH KORREKT DURCH DIE MITTEN
+                            this.ctx.lineWidth = 2.5;
                             this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)'; 
-                            this.ctx.setLineDash([10, 6]);
-                            // Zeichnet exakt durch die Zentren (minX/minY bis maxX/maxY)
+                            this.ctx.setLineDash([8, 4]);
                             this.ctx.strokeRect(s.outline.x, s.outline.y, s.outline.w, s.outline.h);
                             this.ctx.setLineDash([]);
                             
@@ -482,14 +481,14 @@
                 const reportMmScale = this.resultZoom; 
                 const gridSpacing = 10 * reportMmScale;
                 
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)'; ctx.lineWidth = 1; ctx.beginPath();
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)'; ctx.lineWidth = 1; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let x = center.x - gridSpacing; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 for (let y = center.y - gridSpacing; y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 ctx.stroke();
                 
-                ctx.strokeStyle = '#27272a'; ctx.lineWidth = 1;
+                ctx.strokeStyle = '#3f3f46'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
                 ctx.strokeStyle = '#166534'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 
@@ -497,12 +496,19 @@
                 const s = this.calculateStats(g.hits, g); 
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
                 const mmp = g.isVirtual ? 1 : (this.getGroupMmp(g) || 1);
-                const ox = center.x + (g.isVirtual ? s.outline.x : (s.outline.x - g.poa.x) * mmp) * reportMmScale;
-                const oy = center.y - (g.isVirtual ? s.outline.y : (g.poa.y - s.outline.y) * mmp) * reportMmScale;
                 
-                // Box im Bericht (Geometrisch auf Mitten)
-                ctx.strokeStyle = 'rgba(185, 28, 28, 0.5)'; ctx.setLineDash([14, 8]); ctx.lineWidth = 2.0;
-                ctx.strokeRect(ox, oy - (s.outline.h * mmp * reportMmScale), s.outline.w * mmp * reportMmScale, s.outline.h * mmp * reportMmScale);
+                // KOORDINATEN FÜR DAS RECHTECK (STARTPUNKT OBEN LINKS)
+                const dy_top = (g.poa ? (g.poa.y - s.outline.y) * mmp : 0);
+                const dx_left = (g.poa ? (s.outline.x - g.poa.x) * mmp : 0);
+                
+                const boxX = center.x + dx_left * reportMmScale;
+                const boxY = center.y - dy_top * reportMmScale;
+                const boxW = s.outline.w * mmp * reportMmScale;
+                const boxH = s.outline.h * mmp * reportMmScale;
+
+                // RECHTECK IM BERICHT - KORREKTUR POSITIONIERUNG
+                ctx.strokeStyle = 'rgba(185, 28, 28, 0.5)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 2.0;
+                ctx.strokeRect(boxX, boxY, boxW, boxH);
                 ctx.setLineDash([]);
                 
                 ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = '#991b1b'; 
@@ -515,8 +521,8 @@
                 g.hits.forEach((h, i) => { 
                     const hx = center.x + (g.isVirtual ? h.x : (h.x - g.poa.x) * mmp) * reportMmScale;
                     const hy = center.y - (g.isVirtual ? h.y : (g.poa.y - h.y) * mmp) * reportMmScale;
-                    ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000';
-                    ctx.fillStyle = 'rgba(185, 28, 28, 0.8)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.lineWidth = 2.0; ctx.strokeStyle = '#000000';
+                    ctx.fillStyle = 'rgba(185, 28, 28, 0.85)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
                     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px Inter'; ctx.fillText(i+1, hx + 8, hy - 8); 
                 });
 
@@ -540,7 +546,7 @@
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#166534", l: false }, { t: "Schwerpunkt (POI)", c: "#0e7490", l: false }, { t: "R50 (Streukreis)", c: "#0e7490", l: true }, { t: "R95 (Streukreis)", c: "#991b1b", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#52525b'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.41 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.42 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
