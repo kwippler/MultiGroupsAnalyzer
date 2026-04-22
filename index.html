@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.22</title>
+    <title>ShotAnalyst v6.23</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -13,11 +13,11 @@
         .sidebar-scroll { max-height: calc(100vh - 320px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        #stats-panel { cursor: grab; min-width: 340px; }
+        #stats-panel { cursor: grab; min-width: 350px; }
         #stats-panel:active { cursor: grabbing; }
         .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
         .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
-        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; white-space: nowrap; }
+        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; white-space: nowrap; }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
@@ -26,7 +26,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.22</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.23</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -116,10 +116,10 @@
                 </div>
                 <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-zinc-900/80 border border-zinc-700 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50">
                     <div class="flex justify-between text-[10px] uppercase text-zinc-500 font-bold">
-                        <span>Skalierung (Vektor)</span>
-                        <span id="zoom-val">100%</span>
+                        <span>Vektorskalierung (1mm = X px)</span>
+                        <span id="zoom-val">2.0</span>
                     </div>
-                    <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="1" class="zoom-slider" oninput="app.updateZoom(this.value)">
+                    <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="2" class="zoom-slider" oninput="app.updateZoom(this.value)">
                 </div>
             </div>
             
@@ -143,7 +143,7 @@
                 this.groups = [{ id: Date.now(), name: "Gruppe 1", hits: [], poa: null, active: true, selected: false, isVirtual: false }];
                 this.imageHistory = []; this.scale = { p1: null, p2: null }; this.mode = 'hit'; 
                 this.pendingHit = null; this.draggingHit = null; this.cropStart = null; this.cropRect = null;
-                this.resultZoom = 1.0; this.isDraggingStats = false;
+                this.resultZoom = 2.0; this.isDraggingStats = false;
                 this.statsPanel = document.getElementById('stats-panel'); this.dragOffset = { x: 0, y: 0 };
                 this.initEventListeners(); this.renderUI();
             }
@@ -169,9 +169,9 @@
             }
 
             saveSession() {
-                const data = { version: "6.22", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.23", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session_${new Date().toISOString().slice(0,10)}.json`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
 
             loadSession(input) {
@@ -185,7 +185,7 @@
                         document.getElementById('caliber').value = data.caliber;
                         this.scale = data.scale; this.groups = data.groups;
                         this.draw(); this.renderUI();
-                    } catch (err) { console.error("Sitzungsfehler", err); }
+                    } catch (err) { console.error("Ladefehler", err); }
                 };
                 reader.readAsText(file); input.value = "";
             }
@@ -211,7 +211,7 @@
                 }
             }
 
-            updateZoom(val) { this.resultZoom = parseFloat(val); document.getElementById('zoom-val').innerText = Math.round(this.resultZoom * 100) + '%'; if (this.viewMode === 'result') this.drawResult(); }
+            updateZoom(val) { this.resultZoom = parseFloat(val); document.getElementById('zoom-val').innerText = this.resultZoom.toFixed(1); if (this.viewMode === 'result') this.drawResult(); }
             startStatsDrag(e) { if (e.target.tagName === 'INPUT') return; this.isDraggingStats = true; this.dragOffset.x = e.clientX - this.statsPanel.offsetLeft; this.dragOffset.y = e.clientY - this.statsPanel.offsetTop; }
             doStatsDrag(e) { if (!this.isDraggingStats) return; this.statsPanel.style.left = `${e.clientX - this.dragOffset.x}px`; this.statsPanel.style.top = `${e.clientY - this.dragOffset.y}px`; this.statsPanel.style.right = 'auto'; }
             stopStatsDrag() { this.isDraggingStats = false; }
@@ -287,21 +287,15 @@
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
                 const moaFactor = distM * 0.290888;
 
-                // Achsen-Varianzen (Parametrische Grundlage)
                 const varX = hits.reduce((s, h) => s + Math.pow((h.x - coi.x) * mmp, 2), 0) / (hits.length - 1);
                 const varY = hits.reduce((s, h) => s + Math.pow((h.y - coi.y) * mmp, 2), 0) / (hits.length - 1);
-                
-                // Rayleigh-Parameter Sigma (Pooled Standard Deviation)
                 const sigma = Math.sqrt((varX + varY) / 2);
                 
-                // Extremstreuung (Empirisch)
                 let es = 0; for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y));
                 const esMm = es * mmp;
                 
-                // CEP Berechnung (Parametrisch nach Rayleigh/TARAN Standard)
                 const r50 = 1.1774 * sigma;
                 const r95 = 2.4477 * sigma;
-                
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
 
                 let vector = "--", clicks = "--", dx = 0, dy = 0;
@@ -310,7 +304,7 @@
                     vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                     const mmC = distM * 0.1; clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
                 }
-                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50px: r50/mmp, r95px: r95/mmp };
+                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50val: r50, r95val: r95 };
             }
 
             draw() {
@@ -325,7 +319,8 @@
                     if (isA && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g.poa);
                         if (s) { 
-                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.setLineDash([2, 2]); this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50px, 0, Math.PI*2); this.ctx.stroke(); 
+                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.6)'; this.ctx.setLineDash([2, 2]); 
+                            this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
                             this.ctx.setLineDash([]); this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
                         }
                     }
@@ -342,7 +337,7 @@
                     document.getElementById('stats-content').innerHTML = `
                         <div class="stats-row"><span class="text-zinc-400">Extremstreuung (ES):</span> <span class="font-bold">${s.es} mm (${s.esMoa} MOA)</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Mittlerer Radius (MR):</span> <span class="font-bold">${s.mr} mm</span></div>
-                        <div class="stats-row text-cyan-400"><span class="font-bold">Standardabw. (Sigma):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
+                        <div class="stats-row text-cyan-400"><span class="font-bold">Standardabweichung (s):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Streukreis R50 (CEP):</span> <span class="font-bold">${s.r50} mm</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Streukreis R95:</span> <span class="font-bold">${s.r95} mm</span></div>
                         <div class="stats-row border-t border-zinc-800 pt-2"><span class="text-zinc-400">Treffpunktlage:</span> <span class="font-bold">${s.vector}</span></div>
@@ -353,20 +348,34 @@
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                const curScale = 2 * this.resultZoom; ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
-                for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * this.resultZoom, 0, Math.PI*2); ctx.stroke(); }
-                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
-                const g = this.activeGroup; if (!g || g.hits.length === 0 || !g.poa) return;
-                const s = this.calculateStats(g.hits, g.poa); const coiX = center.x + s.dx * curScale, coiY = center.y - s.dy * curScale;
                 
-                ctx.lineWidth = 3; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; ctx.beginPath(); ctx.arc(coiX, coiY, s.r95px * curScale, 0, Math.PI*2); ctx.stroke();
-                ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; ctx.beginPath(); ctx.arc(coiX, coiY, s.r50px * curScale, 0, Math.PI*2); ctx.stroke();
+                // Millimeter-Skalierung auf dem Bericht-Canvas (unabhängig vom Eingangs-Bildformat)
+                const reportMmScale = this.resultZoom; 
+                
+                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
+                for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
+                
+                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
+                
+                const g = this.activeGroup; if (!g || g.hits.length === 0 || !g.poa) return;
+                const s = this.calculateStats(g.hits, g.poa); 
+                const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
+                
+                // R95 & R50 Kreise (Berechnung basierend auf mm-Werten und Report-Skalierung)
+                ctx.lineWidth = 2.5; ctx.setLineDash([8, 4]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)'; 
+                ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
+                
+                ctx.strokeStyle = 'rgba(34, 211, 238, 0.95)'; 
+                ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
                 
                 ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 6, 0, Math.PI*2); ctx.fill();
-                const calHalf = (parseFloat(document.getElementById('caliber').value)/2) * curScale;
+                
+                const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
+                const mmp = this.mmPerPixel;
                 g.hits.forEach((h, i) => { 
-                    const hx = center.x + (h.x - g.poa.x) * this.mmPerPixel * curScale, hy = center.y - (g.poa.y - h.y) * this.mmPerPixel * curScale; 
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalf, 0, Math.PI*2); ctx.fill(); 
+                    const hx = center.x + (h.x - g.poa.x) * mmp * reportMmScale;
+                    const hy = center.y - (g.poa.y - h.y) * mmp * reportMmScale;
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); 
                     ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); 
                 });
 
@@ -379,8 +388,8 @@
                     ["Extremstreuung (ES)", s.es + " mm"], 
                     ["ES in MOA", s.esMoa + " MOA"],
                     ["Mittlerer Radius", s.mr + " mm"], 
-                    ["Standardabw. (s)", s.sa + " mm"],
-                    ["Sigma in MOA", s.saMoa + " MOA"],
+                    ["Standardabweichung (s)", s.sa + " mm"],
+                    ["SA in MOA", s.saMoa + " MOA"],
                     ["Streukreis R50", s.r50 + " mm"], 
                     ["Streukreis R95", s.r95 + " mm"],
                     ["Treffpunktlage", s.vector]
@@ -392,7 +401,6 @@
                 
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 280); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 300);
 
-                // LEGENDE
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
                 const leg = [
                     { t: "Haltepunkt (POA)", c: "#22c55e", l: false },
@@ -408,7 +416,7 @@
                     ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3);
                 });
 
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.22 | Vektorskalierung: ${Math.round(this.resultZoom*100)}%`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.23 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
