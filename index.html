@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.39</title>
+    <title>ShotAnalyst v6.40 (Printable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -25,127 +25,127 @@
             font-variant-numeric: tabular-nums;
         }
 
-        .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
-        .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
+        .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #d4d4d8; border-radius: 2px; outline: none; }
+        .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #dc2626; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
     </style>
 </head>
-<body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
+<body class="bg-zinc-100 text-zinc-900 overflow-hidden h-screen flex justify-center items-center">
 
-    <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
+    <div class="w-full max-w-[1920px] h-[92vh] bg-white border border-zinc-300 rounded-xl shadow-2xl flex overflow-hidden">
         
-        <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
-            <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.39</span></h1>
+        <aside class="w-80 border-r border-zinc-300 flex flex-col no-cursor bg-zinc-50 z-10">
+            <div class="p-4 border-b border-zinc-300">
+                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.40</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Sitzungsdaten</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
-                        <button onclick="app.saveSession()" class="bg-zinc-800 hover:bg-zinc-700 text-[10px] py-2 rounded transition border border-zinc-700 uppercase font-bold">Speichern</button>
-                        <button onclick="document.getElementById('sessionLoadInput').click()" class="bg-zinc-800 hover:bg-zinc-700 text-[10px] py-2 rounded transition border border-zinc-700 uppercase font-bold">Laden</button>
+                        <button onclick="app.saveSession()" class="bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded transition border border-zinc-300 uppercase font-bold">Speichern</button>
+                        <button onclick="document.getElementById('sessionLoadInput').click()" class="bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded transition border border-zinc-300 uppercase font-bold">Laden</button>
                         <input type="file" id="sessionLoadInput" class="hidden" accept=".json" onchange="app.loadSession(this)">
                     </div>
                 </section>
 
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Systemparameter</h2>
                     <div class="space-y-3">
-                        <button onclick="document.getElementById('fileInput').click()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-sm py-2 rounded transition border border-zinc-700 font-bold">Bild importieren</button>
+                        <button onclick="document.getElementById('fileInput').click()" class="w-full bg-white hover:bg-zinc-100 text-zinc-700 text-sm py-2 rounded transition border border-zinc-300 font-bold">Bild importieren</button>
                         <input type="file" id="fileInput" class="hidden" accept="image/*">
                         
                         <div class="space-y-2">
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
                                     <label class="text-[10px] text-zinc-500 uppercase">Distanz (m)</label>
-                                    <input type="number" id="distance" value="100" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                                    <input type="number" id="distance" value="100" class="w-full bg-white border border-zinc-300 rounded p-1 text-sm outline-none focus:border-red-500 transition text-zinc-900">
                                 </div>
                                 <div>
                                     <label class="text-[10px] text-zinc-500 uppercase">Referenz (mm)</label>
-                                    <input type="number" id="refMm" value="20" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                                    <input type="number" id="refMm" value="20" class="w-full bg-white border border-zinc-300 rounded p-1 text-sm outline-none focus:border-red-500 transition text-zinc-900">
                                 </div>
                             </div>
                             <div>
                                 <label class="text-[10px] text-zinc-500 uppercase">Geschoss-Ø (mm)</label>
-                                <input type="number" id="caliber" value="5.56" step="0.01" class="w-full bg-zinc-800 border border-zinc-700 rounded p-1 text-sm outline-none focus:border-red-500 transition">
+                                <input type="number" id="caliber" value="5.56" step="0.01" class="w-full bg-white border border-zinc-300 rounded p-1 text-sm outline-none focus:border-red-500 transition text-zinc-900">
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
-                        <button id="mode-crop" onclick="app.setMode('crop')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Zuschnitt</button>
-                        <button id="mode-scale" onclick="app.setMode('scale')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Skalierung</button>
-                        <button id="mode-poa" onclick="app.setMode('poa')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Haltepunkt</button>
-                        <button id="mode-hit" onclick="app.setMode('hit')" class="text-[10px] py-2 rounded bg-red-900/20 border border-red-500/50 text-red-400 uppercase">Treffer</button>
-                        <button id="mode-adjust" onclick="app.setMode('adjust')" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Justieren</button>
-                        <button onclick="app.undo()" class="text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase">Rückgängig</button>
-                        <button onclick="app.resetCrop()" class="col-span-2 text-[10px] py-2 rounded bg-zinc-800 border border-zinc-700 uppercase hover:bg-zinc-700 transition font-bold">Originalbild wiederherstellen</button>
+                        <button id="mode-crop" onclick="app.setMode('crop')" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Zuschnitt</button>
+                        <button id="mode-scale" onclick="app.setMode('scale')" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Skalierung</button>
+                        <button id="mode-poa" onclick="app.setMode('poa')" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Haltepunkt</button>
+                        <button id="mode-hit" onclick="app.setMode('hit')" class="text-[10px] py-2 rounded bg-red-50 border border-red-200 text-red-600 uppercase">Treffer</button>
+                        <button id="mode-adjust" onclick="app.setMode('adjust')" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Justieren</button>
+                        <button onclick="app.undo()" class="text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100">Rückgängig</button>
+                        <button onclick="app.resetCrop()" class="col-span-2 text-[10px] py-2 rounded bg-white border border-zinc-300 text-zinc-700 uppercase hover:bg-zinc-100 transition font-bold">Originalbild wiederherstellen</button>
                     </div>
                 </section>
 
                 <section>
                     <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
-                        <button onclick="app.addGroup()" class="text-red-500 hover:text-red-400 text-lg font-bold">+</button>
+                        <h2 class="text-xs font-semibold text-zinc-500 uppercase">Gruppenverwaltung</h2>
+                        <button onclick="app.addGroup()" class="text-red-600 hover:text-red-700 text-lg font-bold">+</button>
                     </div>
                     <div id="groupList" class="space-y-2"></div>
-                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-red-500 bg-red-500/10 text-[10px] py-2 rounded hover:bg-red-500/20 transition uppercase tracking-widest text-red-500 font-bold hidden">Verbund generieren</button>
+                    <button onclick="app.requestMerge()" id="mergeBtn" class="mt-4 w-full border border-red-300 bg-red-50 text-[10px] py-2 rounded hover:bg-red-100 transition uppercase tracking-widest text-red-600 font-bold hidden">Verbund generieren</button>
                 </section>
             </div>
 
-            <div class="p-4 border-t border-zinc-800 bg-zinc-950/50 space-y-2">
-                <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-slate-300 font-semibold py-2 rounded border border-zinc-700 transition">Analysebericht</button>
+            <div class="p-4 border-t border-zinc-300 bg-zinc-100 space-y-2">
+                <button id="toggleViewBtn" onclick="app.toggleView()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2 rounded border border-zinc-700 transition">Analysebericht (Druckansicht)</button>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="app.exportCSV()" class="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] py-2 rounded border border-zinc-700 uppercase">CSV Export</button>
-                    <button onclick="app.savePlot()" class="w-full bg-red-600 hover:bg-red-500 text-white text-[10px] py-2 rounded font-bold uppercase transition">Bild speichern</button>
+                    <button onclick="app.exportCSV()" class="w-full bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded border border-zinc-300 uppercase">CSV Export</button>
+                    <button onclick="app.savePlot()" class="w-full bg-red-600 hover:bg-red-700 text-white text-[10px] py-2 rounded font-bold uppercase transition">Bild speichern</button>
                 </div>
             </div>
         </aside>
 
-        <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
+        <main id="main-area" class="flex-1 relative bg-zinc-200 flex items-center justify-center overflow-hidden">
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
-                <div id="canvas-container" class="relative">
+                <div id="canvas-container" class="relative shadow-xl">
                     <canvas id="analysis-canvas"></canvas>
                     <div id="ch-v" class="absolute top-0 w-[2px] h-full bg-red-600/70 pointer-events-none hidden"></div>
                     <div id="ch-h" class="absolute left-0 w-full h-[2px] bg-red-600/70 pointer-events-none hidden"></div>
                     
-                    <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-zinc-900 border border-red-500 p-2 rounded shadow-xl hidden flex gap-2 z-50">
-                        <button onclick="app.confirmHit()" class="bg-green-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Bestätigen</button>
-                        <button onclick="app.cancelHit()" class="bg-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded">Abbruch</button>
+                    <div id="confirm-dialog" class="absolute top-4 left-1/2 -translate-x-1/2 bg-white border border-red-500 p-2 rounded shadow-xl hidden flex gap-2 z-50">
+                        <button onclick="app.confirmHit()" class="bg-green-600 text-white px-4 py-1 text-[10px] uppercase font-bold rounded hover:bg-green-700">Bestätigen</button>
+                        <button onclick="app.cancelHit()" class="bg-zinc-200 text-zinc-700 px-4 py-1 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbruch</button>
                     </div>
 
-                    <div id="merge-confirm" class="absolute inset-0 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
-                        <div class="bg-zinc-900 border border-zinc-700 p-6 rounded-lg shadow-2xl max-w-sm text-center">
-                            <h3 class="text-red-500 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
-                            <p class="text-xs text-zinc-400 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
+                    <div id="merge-confirm" class="absolute inset-0 bg-black/20 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
+                        <div class="bg-white border border-zinc-300 p-6 rounded-lg shadow-2xl max-w-sm text-center">
+                            <h3 class="text-red-600 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
+                            <p class="text-xs text-zinc-600 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
                             <div class="flex gap-2 justify-center">
-                                <button onclick="app.finalizeMerge()" class="bg-red-600 px-4 py-2 text-[10px] uppercase font-bold rounded">Erstellen</button>
-                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>
+                                <button onclick="app.finalizeMerge()" class="bg-red-600 text-white px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-red-700">Erstellen</button>
+                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbrechen</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div id="view-result" class="hidden absolute inset-0 bg-zinc-950 flex flex-col items-center justify-center p-8">
-                <div class="relative bg-zinc-900 border border-zinc-800 rounded-lg shadow-inner overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
+            <div id="view-result" class="hidden absolute inset-0 bg-zinc-100 flex flex-col items-center justify-center p-8">
+                <div class="relative bg-white border border-zinc-300 rounded-lg shadow-xl overflow-hidden flex items-center justify-center" style="width: 850px; height: 850px;">
                     <canvas id="result-canvas" width="850" height="850"></canvas>
                 </div>
-                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-zinc-900/80 border border-zinc-700 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50">
-                    <div class="flex justify-between text-[10px] uppercase text-zinc-500 font-bold">
-                        <span>Vektorskalierung (1mm = X px)</span>
+                <div class="absolute bottom-12 left-1/2 -translate-x-1/2 w-64 bg-white/90 border border-zinc-300 p-3 rounded-lg backdrop-blur-sm flex flex-col gap-2 z-50 shadow-md">
+                    <div class="flex justify-between text-[10px] uppercase text-zinc-600 font-bold">
+                        <span>Vektorskalierung</span>
                         <span id="zoom-val">2.0</span>
                     </div>
                     <input type="range" id="result-zoom" min="0.5" max="8" step="0.1" value="2" class="zoom-slider" oninput="app.updateZoom(this.value)">
                 </div>
             </div>
             
-            <div id="stats-panel" class="absolute top-6 right-6 bg-zinc-900/95 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-md no-cursor hidden select-none z-40">
-                <div class="flex justify-between items-center border-b border-zinc-700 pb-2 mb-3">
-                    <h3 class="text-[11px] font-bold text-red-500 uppercase tracking-wider">Statistische Kenngrößen</h3>
+            <div id="stats-panel" class="absolute top-6 right-6 bg-white/95 border border-zinc-300 p-4 rounded shadow-xl backdrop-blur-md no-cursor hidden select-none z-40 text-zinc-900">
+                <div class="flex justify-between items-center border-b border-zinc-200 pb-2 mb-3">
+                    <h3 class="text-[11px] font-bold text-red-600 uppercase tracking-wider">Statistische Kenngrößen</h3>
                 </div>
                 <div id="stats-content" class="space-y-3 text-[11px] font-medium"></div>
             </div>
@@ -193,7 +193,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.39", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.40", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung.json`; a.click();
             }
@@ -334,8 +334,8 @@
 
             confirmHit() { if (this.pendingHit) { this.activeGroup.hits.push(this.pendingHit); this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); this.renderUI(); } }
             cancelHit() { this.pendingHit = null; document.getElementById('confirm-dialog').classList.add('hidden'); this.draw(); }
-            setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-900/20', 'border-red-500/50', 'text-red-400')); document.getElementById(`mode-${m}`).classList.add('bg-red-900/20', 'border-red-500/50', 'text-red-400'); }
-            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
+            setMode(m) { this.mode = m; document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('bg-red-50', 'border-red-200', 'text-red-600', 'bg-white', 'border-zinc-300', 'text-zinc-700', 'hover:bg-zinc-100')); document.getElementById(`mode-${m}`).classList.add('bg-red-50', 'border-red-200', 'text-red-600'); document.querySelectorAll('[id^="mode-"]:not(#' + `mode-${m}` + ')').forEach(b => b.classList.add('bg-white', 'border-zinc-300', 'text-zinc-700', 'hover:bg-zinc-100')); }
+            toggleView() { this.viewMode = (this.viewMode === 'analysis') ? 'result' : 'analysis'; document.getElementById('view-analysis').classList.toggle('hidden'); document.getElementById('view-result').classList.toggle('hidden'); document.getElementById('toggleViewBtn').innerText = (this.viewMode === 'analysis') ? "Analysebericht (Druckansicht)" : "Zurück zur Analyse"; if (this.viewMode === 'result') this.drawResult(); }
             toggleCrosshair(s) { const d = s && this.viewMode === 'analysis' ? 'block' : 'none'; document.getElementById('ch-v').style.display = d; document.getElementById('ch-h').style.display = d; }
             addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), contextId: this.currentContextId, name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
@@ -399,15 +399,15 @@
                     const mmp = this.getGroupMmp(g) || 1;
                     const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
                     
-                    this.ctx.globalAlpha = isActive ? 1.0 : 0.4;
+                    this.ctx.globalAlpha = isActive ? 1.0 : 0.5;
                     this.ctx.lineWidth = 2.5; 
-                    this.ctx.strokeStyle = isActive ? '#ef4444' : '#52525b';
+                    this.ctx.strokeStyle = isActive ? '#dc2626' : '#71717a'; // Darker red for active, dark grey for inactive
                     
                     g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
                     
                     if (g.poa) {
                         this.ctx.lineWidth = 3.0;
-                        this.ctx.strokeStyle = isActive ? '#22c55e' : '#3f3f46';
+                        this.ctx.strokeStyle = isActive ? '#15803d' : '#52525b'; // Dark green for active POA
                         this.ctx.beginPath(); 
                         this.ctx.moveTo(g.poa.x-12, g.poa.y); this.ctx.lineTo(g.poa.x+12, g.poa.y); 
                         this.ctx.moveTo(g.poa.x, g.poa.y-12); this.ctx.lineTo(g.poa.x, g.poa.y+12); this.ctx.stroke(); 
@@ -416,24 +416,31 @@
                     if (isActive && g.hits.length >= 2) {
                         const s = this.calculateStats(g.hits, g);
                         if (s) {
+                            // Hüllrechteck (H/V) - Korrigiert auf Außenkanten (Kaliber berücksichtigt)
+                            const calPx = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
+                            const offset = calPx / 2;
                             this.ctx.lineWidth = 3.0;
-                            this.ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)'; this.ctx.setLineDash([10, 6]);
-                            this.ctx.strokeRect(s.outline.x, s.outline.y, s.outline.w, s.outline.h);
+                            this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.8)'; // Darker red
+                            this.ctx.setLineDash([10, 6]);
+                            this.ctx.strokeRect(s.outline.x - offset, s.outline.y - offset, s.outline.w + calPx, s.outline.h + calPx);
                             this.ctx.setLineDash([]);
                             
-                            this.ctx.strokeStyle = 'rgba(34, 211, 238, 0.9)'; this.ctx.lineWidth = 2.0; 
+                            this.ctx.strokeStyle = 'rgba(8, 145, 178, 0.9)'; // Darker cyan
+                            this.ctx.lineWidth = 2.0; 
                             this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
-                            this.ctx.fillStyle = '#22d3ee'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 4, 0, Math.PI*2); this.ctx.fill(); 
+                            this.ctx.fillStyle = '#0891b2'; // Darker cyan fill
+                            this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 4, 0, Math.PI*2); this.ctx.fill(); 
                         }
                     }
                     this.ctx.globalAlpha = 1.0;
                 });
 
+                // Metrisches Raster (10 mm)
                 const mmp = this.getGroupMmp(activeG);
                 if (mmp && activeG.scale.p1 && activeG.scale.p2) {
                     const gridStep = 10 / mmp;
                     if (gridStep > 4) {
-                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)'; 
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; 
                         this.ctx.lineWidth = 1.5; 
                         this.ctx.beginPath();
                         const anchor = activeG.poa || { x: 0, y: 0 };
@@ -446,7 +453,7 @@
                 }
 
                 if (activeG.scale && activeG.scale.p1) { 
-                    this.ctx.lineWidth = 3.0; this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
+                    this.ctx.lineWidth = 3.0; this.ctx.strokeStyle = '#dc2626'; this.ctx.beginPath(); 
                     this.ctx.arc(activeG.scale.p1.x, activeG.scale.p1.y, 5, 0, Math.PI*2); 
                     if (activeG.scale.p2) { this.ctx.lineTo(activeG.scale.p2.x, activeG.scale.p2.y); this.ctx.arc(activeG.scale.p2.x, activeG.scale.p2.y, 5, 0, Math.PI*2); } 
                     this.ctx.stroke(); 
@@ -458,7 +465,7 @@
                     this.ctx.fillRect(0, this.cropRect.y + this.cropRect.h, this.canvas.width, this.canvas.height - (this.cropRect.y + this.cropRect.h));
                     this.ctx.fillRect(0, this.cropRect.y, this.cropRect.x, this.cropRect.h);
                     this.ctx.fillRect(this.cropRect.x + this.cropRect.w, this.cropRect.y, this.canvas.width - (this.cropRect.x + this.cropRect.w), this.cropRect.h);
-                    this.ctx.strokeStyle = '#ef4444'; this.ctx.lineWidth = 3; this.ctx.setLineDash([12, 6]);
+                    this.ctx.strokeStyle = '#dc2626'; this.ctx.lineWidth = 3; this.ctx.setLineDash([12, 6]);
                     this.ctx.strokeRect(this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h);
                     this.ctx.setLineDash([]);
                 }
@@ -470,33 +477,36 @@
                 if (s) { 
                     p.classList.remove('hidden'); 
                     document.getElementById('stats-content').innerHTML = `
-                        <div class="stats-row"><span class="text-zinc-400">Extremstreuung (ES):</span> <span class="font-bold">${s.es} mm (${s.esMoa} MOA)</span></div>
-                        <div class="stats-row"><span class="text-zinc-400">Breite (H) / Höhe (V):</span> <span class="font-bold">${s.wMm} / ${s.hMm} mm</span></div>
-                        <div class="stats-row"><span class="text-zinc-400">Mittlerer Radius (MR):</span> <span class="font-bold">${s.mr} mm</span></div>
-                        <div class="stats-row text-cyan-400"><span class="font-bold">Standardabweichung (s):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
-                        <div class="stats-row"><span class="text-zinc-400">Streukreis R50 (CEP):</span> <span class="font-bold">${s.r50} mm</span></div>
-                        <div class="stats-row"><span class="text-zinc-400">Streukreis R95:</span> <span class="font-bold">${s.r95} mm</span></div>
-                        <div class="stats-row border-t border-zinc-800 pt-2"><span class="text-zinc-400">Treffpunktlage:</span> <span class="font-bold">${s.vector} ${ag.isVirtual ? '(Ref. Haltepunkt)' : ''}</span></div>
-                        <div class="mt-2.5 text-cyan-400 font-bold border border-cyan-500/20 py-2 px-3 bg-cyan-500/5 rounded text-center whitespace-nowrap">Korrektur MIL: ${s.clicks}</div>`; 
+                        <div class="stats-row"><span class="text-zinc-500">Extremstreuung (ES):</span> <span class="font-bold text-zinc-900">${s.es} mm (${s.esMoa} MOA)</span></div>
+                        <div class="stats-row"><span class="text-zinc-500">Breite (H) / Höhe (V):</span> <span class="font-bold text-zinc-900">${s.wMm} / ${s.hMm} mm</span></div>
+                        <div class="stats-row"><span class="text-zinc-500">Mittlerer Radius (MR):</span> <span class="font-bold text-zinc-900">${s.mr} mm</span></div>
+                        <div class="stats-row text-cyan-700"><span class="font-bold">Standardabweichung (s):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
+                        <div class="stats-row"><span class="text-zinc-500">Streukreis R50 (CEP):</span> <span class="font-bold text-zinc-900">${s.r50} mm</span></div>
+                        <div class="stats-row"><span class="text-zinc-500">Streukreis R95:</span> <span class="font-bold text-zinc-900">${s.r95} mm</span></div>
+                        <div class="stats-row border-t border-zinc-300 pt-2"><span class="text-zinc-500">Treffpunktlage:</span> <span class="font-bold text-zinc-900">${s.vector} ${ag.isVirtual ? '(Ref. Haltepunkt)' : ''}</span></div>
+                        <div class="mt-2.5 text-cyan-800 font-bold border border-cyan-200 py-2 px-3 bg-cyan-50 rounded text-center whitespace-nowrap">Korrektur MIL: ${s.clicks}</div>`; 
                 } else p.classList.add('hidden');
             }
 
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
-                ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
+                // 1. Weißer Hintergrund für Druck
+                ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
                 const reportMmScale = this.resultZoom; 
                 const gridSpacing = 10 * reportMmScale;
                 
-                ctx.strokeStyle = 'rgba(113, 113, 122, 0.5)'; ctx.lineWidth = 1.2; ctx.beginPath();
+                // 2. Dunkelgraues Raster
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)'; ctx.lineWidth = 1; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let x = center.x - gridSpacing; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 for (let y = center.y - gridSpacing; y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 ctx.stroke();
                 
-                ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
+                // 3. Schwarze Ringe und Dunkelgrünes Fadenkreuz
+                ctx.strokeStyle = '#000000'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
-                ctx.strokeStyle = '#22c55e'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
+                ctx.strokeStyle = '#15803d'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 
                 const g = this.activeGroup; if (!g || g.hits.length === 0) return;
                 const s = this.calculateStats(g.hits, g); 
@@ -505,27 +515,29 @@
                 const ox = center.x + (g.isVirtual ? s.outline.x : (s.outline.x - g.poa.x) * mmp) * reportMmScale;
                 const oy = center.y - (g.isVirtual ? s.outline.y : (g.poa.y - s.outline.y) * mmp) * reportMmScale;
                 
-                ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)'; ctx.setLineDash([14, 8]); ctx.lineWidth = 2.0;
+                // 4. Dunkelrote/Blaue Analyse-Elemente
+                ctx.strokeStyle = 'rgba(220, 38, 38, 0.6)'; ctx.setLineDash([14, 8]); ctx.lineWidth = 2.0;
                 ctx.strokeRect(ox, oy - (s.outline.h * mmp * reportMmScale), s.outline.w * mmp * reportMmScale, s.outline.h * mmp * reportMmScale);
                 ctx.setLineDash([]);
-                ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; 
+                ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = '#dc2626'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.strokeStyle = 'rgba(34, 211, 238, 1.0)'; 
+                ctx.strokeStyle = '#0891b2'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.setLineDash([]); ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(coiX, coiY, 8, 0, Math.PI*2); ctx.fill();
+                ctx.setLineDash([]); ctx.fillStyle = '#0891b2'; ctx.beginPath(); ctx.arc(coiX, coiY, 8, 0, Math.PI*2); ctx.fill();
                 
                 const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
                 g.hits.forEach((h, i) => { 
                     const hx = center.x + (g.isVirtual ? h.x : (h.x - g.poa.x) * mmp) * reportMmScale;
                     const hy = center.y - (g.isVirtual ? h.y : (g.poa.y - h.y) * mmp) * reportMmScale;
-                    ctx.lineWidth = 2.5; ctx.strokeStyle = '#ef4444';
-                    ctx.fillStyle = 'rgba(239, 68, 68, 0.8)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-                    ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter'; ctx.fillText(i+1, hx + 8, hy - 8); 
+                    ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000';
+                    ctx.fillStyle = 'rgba(220, 38, 38, 0.7)'; ctx.beginPath(); ctx.arc(hx, hy, calHalfPx, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px Inter'; ctx.fillText(i+1, hx + 8, hy - 8); 
                 });
 
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 640); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 640);
-                ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
-                ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; 
+                // 5. Helles Seitenpanel mit dunklem Text
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(255, 255, 255, 0.95)'; ctx.fillRect(sx, sy, 220, 640); ctx.strokeStyle = '#52525b'; ctx.strokeRect(sx, sy, 220, 640);
+                ctx.fillStyle = '#000000'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
+                ctx.fillStyle = '#52525b'; ctx.font = '10px Inter'; 
                 ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Stichprobe (n): ${g.hits.length}`, sx + 15, sy + 65);
                 const report = [ 
                     ["Extremstreuung (ES)", s.es + " mm"], 
@@ -538,12 +550,12 @@
                     ["Streukreis R95", s.r95 + " mm"], 
                     ["Treffpunktlage", s.vector] 
                 ];
-                report.forEach((item, i) => { ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 100 + (i*20)); ctx.textAlign = "left"; });
-                ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 300); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 320);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
-                const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
-                leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.39 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                report.forEach((item, i) => { ctx.fillStyle = '#52525b'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); ctx.fillStyle = '#000000'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 100 + (i*20)); ctx.textAlign = "left"; });
+                ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 300); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 320);
+                ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
+                const leg = [ { t: "Haltepunkt (POA)", c: "#15803d", l: false }, { t: "Schwerpunkt (POI)", c: "#0891b2", l: false }, { t: "R50 (Streukreis)", c: "#0891b2", l: true }, { t: "R95 (Streukreis)", c: "#dc2626", l: true } ];
+                leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#52525b'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
+                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.40 (Print) | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
@@ -565,10 +577,10 @@
             renderUI() {
                 const list = document.getElementById('groupList'); list.innerHTML = '';
                 this.groups.forEach(g => {
-                    const d = document.createElement('div'); d.className = `flex items-center gap-2 p-1 rounded transition ${g.active ? 'bg-red-500/5 ring-1 ring-red-500/30' : ''}`;
-                    const label = document.createElement('div'); label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center ${g.active ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800'}`;
-                    label.onclick = () => this.selectGroup(g.id); label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold">${g.name}</span><span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 px-1 transition-colors">✕</button>`;
-                    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'w-4 h-4 rounded-full border-zinc-700 bg-zinc-800 text-red-600'; cb.checked = g.selected; cb.onchange = () => this.toggleSelection(g.id);
+                    const d = document.createElement('div'); d.className = `flex items-center gap-2 p-1 rounded transition ${g.active ? 'bg-red-50 ring-1 ring-red-200' : ''}`;
+                    const label = document.createElement('div'); label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center ${g.active ? 'border-red-200 bg-red-50 text-red-700' : 'border-zinc-300 bg-white hover:bg-zinc-50 text-zinc-700'}`;
+                    label.onclick = () => this.selectGroup(g.id); label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold">${g.name}</span><span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-400 hover:text-red-600 px-1 transition-colors">✕</button>`;
+                    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'w-4 h-4 rounded-full border-zinc-300 text-red-600 focus:ring-red-500'; cb.checked = g.selected; cb.onchange = () => this.toggleSelection(g.id);
                     d.appendChild(cb); d.appendChild(label); list.appendChild(d);
                 });
                 document.getElementById('mergeBtn').classList.toggle('hidden', this.groups.filter(g => g.selected).length < 2);
