@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.36</title>
+    <title>ShotAnalyst v6.38</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.36</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.38</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -109,7 +109,6 @@
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
                     <canvas id="analysis-canvas"></canvas>
-                    <!-- Fadenkreuz für präzise Positionierung -->
                     <div id="ch-v" class="absolute top-0 w-[2px] h-full bg-red-500/60 pointer-events-none hidden"></div>
                     <div id="ch-h" class="absolute left-0 w-full h-[2px] bg-red-500/60 pointer-events-none hidden"></div>
                     
@@ -194,7 +193,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.36", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.38", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.json`; a.click();
             }
@@ -374,13 +373,17 @@
                 let minX = hits[0].x, maxX = hits[0].x, minY = hits[0].y, maxY = hits[0].y;
                 hits.forEach(h => { minX = Math.min(minX, h.x); maxX = Math.max(maxX, h.x); minY = Math.min(minY, h.y); maxY = Math.max(maxY, h.y); });
                 const outline = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+                
+                // Neue Werte: Horizontale und Vertikale Ausdehnung in mm
+                const wMm = outline.w * mmp;
+                const hMm = outline.h * mmp;
 
                 const dx = isMetric ? coi.x : (group.poa ? (coi.x - group.poa.x) * mmp : 0);
                 const dy = isMetric ? coi.y : (group.poa ? (group.poa.y - coi.y) * mmp : 0);
                 const vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                 const mmC = distM * 0.1;
                 const clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
-                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50val: r50, r95val: r95, outline };
+                return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50val: r50, r95val: r95, outline, wMm: wMm.toFixed(2), hMm: hMm.toFixed(2) };
             }
 
             draw() {
@@ -390,7 +393,6 @@
                 
                 const activeG = this.activeGroup; if (!activeG) return;
                 
-                // Zeichnen aller Gruppen im aktuellen Kontext
                 this.groups.forEach(g => {
                     if (g.isVirtual) return;
                     if (g.contextId !== this.currentContextId && g.id !== activeG.id) return;
@@ -429,7 +431,6 @@
                     this.ctx.globalAlpha = 1.0;
                 });
 
-                // Dynamisches 10-mm-Raster
                 const mmp = this.getGroupMmp(activeG);
                 if (mmp && activeG.scale.p1 && activeG.scale.p2) {
                     const gridStep = 10 / mmp;
@@ -446,7 +447,6 @@
                     }
                 }
 
-                // Skalierungslinie
                 if (activeG.scale && activeG.scale.p1) { 
                     this.ctx.lineWidth = 2.0; this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
                     this.ctx.arc(activeG.scale.p1.x, activeG.scale.p1.y, 4, 0, Math.PI*2); 
@@ -454,23 +454,16 @@
                     this.ctx.stroke(); 
                 }
 
-                // Zuschnittsfenster (Visualisierung während Auswahl)
                 if (this.mode === 'crop' && this.cropRect) {
-                    // Verdunkelung des Außenbereichs
                     this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                     this.ctx.fillRect(0, 0, this.canvas.width, this.cropRect.y);
                     this.ctx.fillRect(0, this.cropRect.y + this.cropRect.h, this.canvas.width, this.canvas.height - (this.cropRect.y + this.cropRect.h));
                     this.ctx.fillRect(0, this.cropRect.y, this.cropRect.x, this.cropRect.h);
                     this.ctx.fillRect(this.cropRect.x + this.cropRect.w, this.cropRect.y, this.canvas.width - (this.cropRect.x + this.cropRect.w), this.cropRect.h);
-                    
-                    // Auswahlrahmen
-                    this.ctx.strokeStyle = '#ef4444';
-                    this.ctx.lineWidth = 2;
-                    this.ctx.setLineDash([8, 4]);
+                    this.ctx.strokeStyle = '#ef4444'; this.ctx.lineWidth = 2; this.ctx.setLineDash([8, 4]);
                     this.ctx.strokeRect(this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h);
                     this.ctx.setLineDash([]);
                 }
-
                 this.updateStats();
             }
 
@@ -480,6 +473,7 @@
                     p.classList.remove('hidden'); 
                     document.getElementById('stats-content').innerHTML = `
                         <div class="stats-row"><span class="text-zinc-400">Extremstreuung (ES):</span> <span class="font-bold">${s.es} mm (${s.esMoa} MOA)</span></div>
+                        <div class="stats-row"><span class="text-zinc-400">Breite (H) / Höhe (V):</span> <span class="font-bold">${s.wMm} / ${s.hMm} mm</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Mittlerer Radius (MR):</span> <span class="font-bold">${s.mr} mm</span></div>
                         <div class="stats-row text-cyan-400"><span class="font-bold">Standardabweichung (s):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Streukreis R50 (CEP):</span> <span class="font-bold">${s.r50} mm</span></div>
@@ -492,9 +486,10 @@
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                const reportMmScale = this.resultZoom; const gridSpacing = 10 * reportMmScale;
+                const reportMmScale = this.resultZoom; 
+                const gridSpacing = 10 * reportMmScale;
                 
-                ctx.strokeStyle = '#27272a'; ctx.lineWidth = 0.5; ctx.beginPath();
+                ctx.strokeStyle = 'rgba(63, 63, 70, 0.4)'; ctx.lineWidth = 1; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let x = center.x - gridSpacing; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
@@ -508,7 +503,6 @@
                 const g = this.activeGroup; if (!g || g.hits.length === 0) return;
                 const s = this.calculateStats(g.hits, g); 
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
-                
                 const mmp = g.isVirtual ? 1 : (this.getGroupMmp(g) || 1);
                 const ox = center.x + (g.isVirtual ? s.outline.x : (s.outline.x - g.poa.x) * mmp) * reportMmScale;
                 const oy = center.y - (g.isVirtual ? s.outline.y : (g.poa.y - s.outline.y) * mmp) * reportMmScale;
@@ -516,7 +510,6 @@
                 ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 1.5;
                 ctx.strokeRect(ox, oy - (s.outline.h * mmp * reportMmScale), s.outline.w * mmp * reportMmScale, s.outline.h * mmp * reportMmScale);
                 ctx.setLineDash([]);
-
                 ctx.lineWidth = 3.0; ctx.setLineDash([8, 6]); ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
                 ctx.strokeStyle = 'rgba(34, 211, 238, 1.0)'; 
@@ -536,13 +529,23 @@
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; 
                 ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Stichprobe (n): ${g.hits.length}`, sx + 15, sy + 65);
-                const report = [ ["Extremstreuung (ES)", s.es + " mm"], ["ES in MOA", s.esMoa + " MOA"], ["Mittlerer Radius", s.mr + " mm"], ["Standardabweichung (s)", s.sa + " mm"], ["SA in MOA", s.saMoa + " MOA"], ["Streukreis R50", s.r50 + " mm"], ["Streukreis R95", s.r95 + " mm"], ["Treffpunktlage", s.vector] ];
+                const report = [ 
+                    ["Extremstreuung (ES)", s.es + " mm"], 
+                    ["Breite (H)", s.wMm + " mm"],
+                    ["Höhe (V)", s.hMm + " mm"],
+                    ["ES in MOA", s.esMoa + " MOA"], 
+                    ["Mittlerer Radius", s.mr + " mm"], 
+                    ["Standardabweichung (s)", s.sa + " mm"], 
+                    ["Streukreis R50", s.r50 + " mm"], 
+                    ["Streukreis R95", s.r95 + " mm"], 
+                    ["Treffpunktlage", s.vector] 
+                ];
                 report.forEach((item, i) => { ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); ctx.fillStyle = '#fff'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 100 + (i*20)); ctx.textAlign = "left"; });
-                ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 280); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 300);
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
+                ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 300); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 320);
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
-                leg.forEach((item, i) => { const ly = sy + 375 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.36 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.38 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
