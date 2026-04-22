@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.31</title>
+    <title>ShotAnalyst v6.32</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.31</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.32</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -173,6 +173,7 @@
             getGroupMmp(group) {
                 if (!group || !group.scale || !group.scale.p1 || !group.scale.p2) return 1;
                 const pixDist = Math.hypot(group.scale.p1.x - group.scale.p2.x, group.scale.p1.y - group.scale.p2.y);
+                if (pixDist === 0) return 1;
                 return (parseFloat(document.getElementById('refMm').value) || 20) / pixDist;
             }
 
@@ -190,7 +191,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.31", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.32", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -218,11 +219,20 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
-                        this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
-                        this.pendingHit = null; this.draggingHit = null; this.cropRect = null; this.cropStart = null;
+                        this.originalImg = tempImg; 
+                        this.croppedImg = tempImg; 
+                        this.imageHistory = []; 
+                        this.pendingHit = null; 
+                        this.draggingHit = null; 
+                        this.cropRect = null; 
+                        this.cropStart = null;
                         this.groups.forEach(g => g.selected = false);
                         if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
-                        this.resizeCanvas(); this.draw(); this.renderUI(); 
+                        else if (this.activeGroup) this.activeGroup.scale = { p1: null, p2: null };
+                        
+                        this.resizeCanvas(); 
+                        this.draw(); 
+                        this.renderUI(); 
                         e.target.value = "";
                     };
                     tempImg.src = event.target.result;
@@ -317,7 +327,7 @@
             }
 
             calculateStats(hits, group) {
-                if (hits.length < 2) return null;
+                if (!hits || hits.length < 2) return null;
                 const isMetric = group.isVirtual;
                 const mmp = isMetric ? 1 : this.getGroupMmp(group);
                 const distM = parseFloat(document.getElementById('distance').value) || 100;
@@ -331,11 +341,8 @@
                 const r50 = 1.1774 * sigma;
                 const r95 = 2.4477 * sigma;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
-                
-                // VERBUNDGRUPPEN FIX: dx/dy beziehen sich IMMER auf (0,0) Haltepunkt
                 const dx = isMetric ? coi.x : (group.poa ? (coi.x - group.poa.x) * mmp : 0);
                 const dy = isMetric ? coi.y : (group.poa ? (group.poa.y - coi.y) * mmp : 0);
-                
                 const vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
                 const mmC = distM * 0.1;
                 const clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
@@ -347,7 +354,9 @@
                 this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
                 if (this.croppedImg) this.ctx.drawImage(this.croppedImg, 0,0,this.canvas.width,this.canvas.height);
                 const g = this.activeGroup; if (!g) return;
-                if (!g.isVirtual && g.scale.p1 && g.scale.p2) {
+                
+                // Analyse-Raster
+                if (!g.isVirtual && g.scale && g.scale.p1 && g.scale.p2) {
                     const mmp = this.getGroupMmp(g); const gridStep = 10 / mmp;
                     if (gridStep > 4) {
                         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; this.ctx.lineWidth = 0.5; this.ctx.beginPath();
@@ -359,6 +368,7 @@
                         this.ctx.stroke();
                     }
                 }
+
                 if (g.isVirtual) { this.updateStats(); return; }
                 const mmp = this.getGroupMmp(g); const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
                 this.ctx.strokeStyle = '#ef4444'; g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
@@ -406,9 +416,9 @@
                 const reportMmScale = this.resultZoom; const gridSpacing = 10 * reportMmScale;
                 ctx.strokeStyle = '#27272a'; ctx.lineWidth = 0.5; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
-                for (let x = center.x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+                for (let x = center.x - gridSpacing; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
-                for (let y = center.y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+                for (let y = center.y - gridSpacing; y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 ctx.stroke();
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
@@ -439,7 +449,7 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 375 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.31 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.32 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
