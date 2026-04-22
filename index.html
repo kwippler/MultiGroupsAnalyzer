@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.20</title>
+    <title>ShotAnalyst v6.21</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -13,12 +13,12 @@
         .sidebar-scroll { max-height: calc(100vh - 320px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        #stats-panel { cursor: grab; min-width: 300px; }
+        #stats-panel { cursor: grab; min-width: 320px; }
         #stats-panel:active { cursor: grabbing; }
         .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
         .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
-        /* Sicherstellung der einzeiligen Darstellung */
-        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; white-space: nowrap; }
+        /* Unterbindung von Zeilenumbrüchen bei breiten Zahlenwerten */
+        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: center; white-space: nowrap; }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
@@ -28,7 +28,7 @@
         <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.20</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.21</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -187,7 +187,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.20", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.21", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -407,10 +407,30 @@
                 });
                 
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 280); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 300);
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.20 | ${Math.round(this.resultZoom*100)}% Vektorskalierung`, sx + 15, sy + 585);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.21 | ${Math.round(this.resultZoom*100)}% Vektorskalierung`, sx + 15, sy + 585);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
+
+            exportCSV() {
+                // Byte Order Mark (BOM) für UTF-8 (Excel-Kompatibilität)
+                let c = "\ufeffName;n;X_mm;Y_mm\n";
+                this.groups.forEach(g => {
+                    const p = g.poa || {x:0, y:0};
+                    g.hits.forEach((h, i) => {
+                        // Dezimalkomma-Anpassung für deutsche Tabellenkalkulationen
+                        const dx = ((h.x - p.x) * this.mmPerPixel).toFixed(4).replace('.', ',');
+                        const dy = ((p.y - h.y) * this.mmPerPixel).toFixed(4).replace('.', ',');
+                        c += `${g.name};${i+1};${dx};${dy}\n`;
+                    });
+                });
+                const blob = new Blob([c], { type: 'text/csv;charset=utf-8;' });
+                const u = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = u;
+                a.download = `ShotAnalyst_Export_${new Date().toISOString().slice(0,10)}.csv`;
+                a.click();
+            }
 
             renderUI() {
                 const list = document.getElementById('groupList'); list.innerHTML = '';
@@ -426,7 +446,6 @@
 
             deleteGroup(id) { if (this.groups.length > 1) { this.groups = this.groups.filter(g => g.id !== id); if (!this.activeGroup) this.groups[0].active = true; this.draw(); this.renderUI(); } }
             undo() { if (this.activeGroup?.hits.length > 0) this.activeGroup.hits.pop(); else if (this.imageHistory.length > 0) { this.croppedImg = this.imageHistory.pop(); this.resizeCanvas(); } this.draw(); this.renderUI(); }
-            exportCSV() { let c = "Name;n;X_mm;Y_mm\n"; this.groups.forEach(g => { const p = g.poa || {x:0,y:0}; g.hits.forEach((h,i) => { c += `${g.name};${i+1};${((h.x-p.x)*this.mmPerPixel).toFixed(4)};${((p.y-h.y)*this.mmPerPixel).toFixed(4)}\n`; }); }); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], {type:'text/csv'})); a.download = 'ShotAnalyst_Export.csv'; a.click(); }
         }
         const app = new ShotAnalyst();
     </script>
