@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.46</title>
+    <title>ShotAnalyst v6.48</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-300 flex flex-col no-cursor bg-zinc-50 z-10">
             <div class="p-4 border-b border-zinc-300">
-                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.46</span></h1>
+                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.48</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -190,9 +190,9 @@
             }
 
             saveSession() {
-                const data = { version: "6.46", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.48", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session.json`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.json`; a.click();
             }
 
             loadSession(input) {
@@ -418,10 +418,12 @@
 
             draw() {
                 if (this.viewMode === 'result') return;
+                this.ctx.save();
+                this.ctx.globalAlpha = 1.0;
                 this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
                 if (this.croppedImg) this.ctx.drawImage(this.croppedImg, 0,0,this.canvas.width,this.canvas.height);
                 
-                const activeG = this.activeGroup; if (!activeG) return;
+                const activeG = this.activeGroup; if (!activeG) { this.ctx.restore(); return; }
                 
                 this.groups.forEach(g => {
                     if (g.isVirtual) return;
@@ -438,7 +440,7 @@
                     g.hits.forEach((h, i) => { 
                         this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); 
                         if (isActive) {
-                            this.ctx.fillStyle = '#000';
+                            this.ctx.fillStyle = '#000000';
                             this.ctx.font = 'bold 10px Inter';
                             this.ctx.fillText(i + 1, h.x + calP/2 + 2, h.y - calP/2 - 2);
                         }
@@ -469,9 +471,9 @@
                     this.ctx.globalAlpha = 1.0;
                 });
 
-                const mmp = this.getGroupMmp(activeG);
-                if (mmp && activeG.scale.p1 && activeG.scale.p2) {
-                    const gridStep = 10 / mmp;
+                const mmp_active = this.getGroupMmp(activeG);
+                if (mmp_active && activeG.scale.p1 && activeG.scale.p2) {
+                    const gridStep = 10 / mmp_active;
                     if (gridStep > 4) {
                         this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; this.ctx.lineWidth = 1.5; this.ctx.beginPath();
                         const anchor = activeG.poa || { x: 0, y: 0 };
@@ -500,6 +502,7 @@
                     this.ctx.strokeRect(this.cropRect.x, this.cropRect.y, this.cropRect.w, this.cropRect.h);
                     this.ctx.setLineDash([]);
                 }
+                this.ctx.restore();
                 this.updateStats();
             }
 
@@ -521,6 +524,8 @@
 
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
+                ctx.save();
+                ctx.globalAlpha = 1.0;
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,w,h);
                 const reportMmScale = this.resultZoom; 
                 const gridSpacing = 10 * reportMmScale;
@@ -536,7 +541,7 @@
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
                 ctx.strokeStyle = '#166534'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0, center.y); ctx.lineTo(center.x*2, center.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(center.x, 0); ctx.lineTo(center.x, h); ctx.stroke();
                 
-                const g = this.activeGroup; if (!g || g.hits.length === 0) return;
+                const g = this.activeGroup; if (!g || g.hits.length === 0) { ctx.restore(); return; }
                 const s = this.calculateStats(g.hits, g); 
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
                 const mmp = g.isVirtual ? 1 : (this.getGroupMmp(g) || 1);
@@ -558,11 +563,25 @@
                 }
                 ctx.strokeStyle = 'rgba(185, 28, 28, 0.4)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 2.0;
                 ctx.strokeRect(boxX, boxY, boxW, boxH); ctx.setLineDash([]);
+                
+                // R95 & R50 Kreise
                 ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = '#991b1b'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
                 ctx.strokeStyle = '#0e7490'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r50) * reportMmScale, 0, Math.PI*2); ctx.stroke();
-                ctx.setLineDash([]); ctx.fillStyle = '#0e7490'; ctx.beginPath(); ctx.arc(coiX, coiY, 8, 0, Math.PI*2); ctx.fill();
+                
+                // Treffpunkt-Schwerpunkt (POI) - V6.48 HARDENED RENDERING FÜR EDGE & VERBUNDGRUPPEN
+                ctx.save();
+                ctx.setLineDash([]); 
+                ctx.globalAlpha = 1.0;
+                ctx.fillStyle = '#0e7490'; 
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.0;
+                ctx.beginPath(); 
+                ctx.arc(coiX, coiY, 8, 0, Math.PI*2); 
+                ctx.fill(); 
+                ctx.stroke(); // Erzwungene Kontur für Sichtbarkeit in Edge
+                ctx.restore();
                 
                 const calHalfPx = (parseFloat(document.getElementById('caliber').value)/2) * reportMmScale;
                 g.hits.forEach((h, i) => { 
@@ -583,7 +602,8 @@
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#166534", l: false }, { t: "Schwerpunkt (POI)", c: "#0e7490", l: false }, { t: "R50 (Streukreis)", c: "#0e7490", l: true }, { t: "R95 (Streukreis)", c: "#991b1b", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#52525b'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.46 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.48 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                ctx.restore();
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
