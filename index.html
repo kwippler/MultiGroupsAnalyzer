@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.43</title>
+    <title>ShotAnalyst v6.45</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,12 +35,12 @@
         
         <aside class="w-80 border-r border-zinc-300 flex flex-col no-cursor bg-zinc-50 z-10">
             <div class="p-4 border-b border-zinc-300">
-                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.43</span></h1>
+                <h1 class="text-red-600 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-zinc-500 font-light">v6.45</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
                 <section>
-                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-500">Sitzungsdaten</h2>
+                    <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="app.saveSession()" class="bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded transition border border-zinc-300 uppercase font-bold">Speichern</button>
                         <button onclick="document.getElementById('sessionLoadInput').click()" class="bg-white hover:bg-zinc-100 text-zinc-700 text-[10px] py-2 rounded transition border border-zinc-300 uppercase font-bold">Laden</button>
@@ -120,11 +120,8 @@
                     <div id="merge-confirm" class="absolute inset-0 bg-black/20 backdrop-blur-sm hidden flex items-center justify-center z-[100]">
                         <div class="bg-white border border-zinc-300 p-6 rounded-lg shadow-2xl max-w-sm text-center">
                             <h3 class="text-red-600 font-bold mb-2 uppercase text-sm">Verbundgruppe generieren</h3>
-                            <p id="merge-msg" class="text-xs text-zinc-600 mb-6">Soll aus den selektierten Elementen eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?</p>
-                            <div class="flex gap-2 justify-center" id="merge-actions">
-                                <button onclick="app.finalizeMerge()" class="bg-red-600 text-white px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-red-700">Erstellen</button>
-                                <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbrechen</button>
-                            </div>
+                            <p id="merge-msg" class="text-xs text-zinc-600 mb-6"></p>
+                            <div class="flex gap-2 justify-center" id="merge-actions"></div>
                         </div>
                     </div>
                 </div>
@@ -193,9 +190,9 @@
             }
 
             saveSession() {
-                const data = { version: "6.43", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.45", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session.json`; a.click();
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Export.json`; a.click();
             }
 
             loadSession(input) {
@@ -343,18 +340,21 @@
             
             requestMerge() { 
                 const selected = this.groups.filter(g => g.selected);
-                const invalid = selected.filter(g => !g.poa || !this.getGroupMmp(g));
+                const invalid = selected.filter(g => !g.isVirtual && (!g.poa || !this.getGroupMmp(g)));
                 const modal = document.getElementById('merge-confirm');
                 const msg = document.getElementById('merge-msg');
                 const actions = document.getElementById('merge-actions');
                 
-                if (invalid.length > 0) {
+                if (selected.length < 2) {
+                    msg.innerHTML = `<span class="text-red-600 font-bold">Fehler:</span><br>Bitte wählen Sie mindestens zwei Gruppen für die Verbundgenerierung aus.`;
+                    actions.innerHTML = `<button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">OK</button>`;
+                } else if (invalid.length > 0) {
                     msg.innerHTML = `<span class="text-red-600 font-bold">Fehler:</span><br>Einige Gruppen (${invalid.map(x=>x.name).join(', ')}) verfügen über keine gültige Skalierung oder keinen Haltepunkt. Eine metrische Zusammenführung ist nicht möglich.`;
                     actions.innerHTML = `<button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">OK</button>`;
                 } else {
                     msg.innerText = `Soll aus den selektierten Elementen (${selected.length} Gruppen) eine virtuelle Einheit zur statistischen Gesamtanalyse erstellt werden?`;
                     actions.innerHTML = `<button onclick="app.finalizeMerge()" class="bg-red-600 text-white px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-red-700">Erstellen</button>
-                                         <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded">Abbrechen</button>`;
+                                         <button onclick="document.getElementById('merge-confirm').classList.add('hidden')" class="bg-zinc-200 text-zinc-700 px-4 py-2 text-[10px] uppercase font-bold rounded hover:bg-zinc-300">Abbrechen</button>`;
                 }
                 modal.classList.remove('hidden'); 
             }
@@ -362,9 +362,9 @@
             finalizeMerge() {
                 const selectedGroups = this.groups.filter(g => g.selected);
                 const transformedHits = selectedGroups.flatMap(g => {
+                    if (g.isVirtual) return g.hits; // Schon im mm-Raum
                     const mmp = this.getGroupMmp(g);
                     const poa = g.poa;
-                    // Transformation in mm-Raum relativ zum jeweiligen Haltepunkt
                     return g.hits.map(h => ({ 
                         x: (h.x - poa.x) * mmp, 
                         y: (poa.y - h.y) * mmp, 
@@ -412,9 +412,13 @@
                 const r95 = 2.4477 * sigma;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
                 
-                let minX = hits[0].x, maxX = hits[0].x, minY = hits[0].y, maxY = hits[0].y;
-                hits.forEach(h => { minX = Math.min(minX, h.x); maxX = Math.max(maxX, h.x); minY = Math.min(minY, h.y); maxY = Math.max(maxY, h.y); });
-                const outline = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+                let minX, maxX, minY, maxY;
+                hits.forEach(h => {
+                    if (minX === undefined) { minX = maxX = h.x; minY = maxY = h.y; }
+                    minX = Math.min(minX, h.x); maxX = Math.max(maxX, h.x);
+                    minY = Math.min(minY, h.y); maxY = Math.max(maxY, h.y);
+                });
+                const outline = { minX, maxX, minY, maxY, w: maxX - minX, h: maxY - minY };
                 const wMm = outline.w * mmp;
                 const hMm = outline.h * mmp;
 
@@ -445,7 +449,14 @@
                     this.ctx.lineWidth = 2.5; 
                     this.ctx.strokeStyle = isActive ? '#dc2626' : '#71717a'; 
                     
-                    g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
+                    g.hits.forEach((h, i) => { 
+                        this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); 
+                        if (isActive) {
+                            this.ctx.fillStyle = '#000';
+                            this.ctx.font = 'bold 10px Inter';
+                            this.ctx.fillText(i + 1, h.x + calP/2 + 2, h.y - calP/2 - 2);
+                        }
+                    });
                     
                     if (g.poa) {
                         this.ctx.lineWidth = 3.0;
@@ -460,40 +471,27 @@
                         if (s) {
                             // ES Verbindungslinie
                             if (s.esP1 && s.esP2) {
-                                this.ctx.beginPath();
-                                this.ctx.setLineDash([5, 5]);
-                                this.ctx.strokeStyle = 'rgba(153, 27, 27, 0.4)';
-                                this.ctx.moveTo(s.esP1.x, s.esP1.y);
-                                this.ctx.lineTo(s.esP2.x, s.esP2.y);
-                                this.ctx.stroke();
-                                this.ctx.setLineDash([]);
+                                this.ctx.beginPath(); this.ctx.setLineDash([5, 5]); this.ctx.strokeStyle = 'rgba(153, 27, 27, 0.4)';
+                                this.ctx.moveTo(s.esP1.x, s.esP1.y); this.ctx.lineTo(s.esP2.x, s.esP2.y); this.ctx.stroke(); this.ctx.setLineDash([]);
                             }
-
-                            // Hüllrechteck (Bounding Box)
-                            this.ctx.lineWidth = 2.5;
-                            this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)'; 
-                            this.ctx.setLineDash([8, 4]);
-                            this.ctx.strokeRect(s.outline.x, s.outline.y, s.outline.w, s.outline.h);
-                            this.ctx.setLineDash([]);
+                            // Hüllrechteck
+                            this.ctx.lineWidth = 2.5; this.ctx.strokeStyle = 'rgba(220, 38, 38, 0.9)'; this.ctx.setLineDash([8, 4]);
+                            this.ctx.strokeRect(s.outline.minX, s.outline.minY, s.outline.w, s.outline.h); this.ctx.setLineDash([]);
                             
-                            this.ctx.strokeStyle = 'rgba(8, 145, 178, 0.9)'; 
-                            this.ctx.lineWidth = 2.0; 
+                            this.ctx.strokeStyle = 'rgba(8, 145, 178, 0.9)'; this.ctx.lineWidth = 2.0; 
                             this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, s.r50val/mmp, 0, Math.PI*2); this.ctx.stroke(); 
-                            this.ctx.fillStyle = '#0891b2'; 
-                            this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 4, 0, Math.PI*2); this.ctx.fill(); 
+                            this.ctx.fillStyle = '#0891b2'; this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 4, 0, Math.PI*2); this.ctx.fill(); 
                         }
                     }
                     this.ctx.globalAlpha = 1.0;
                 });
 
-                // Metrisches Raster (10 mm)
+                // Metrisches Raster
                 const mmp = this.getGroupMmp(activeG);
                 if (mmp && activeG.scale.p1 && activeG.scale.p2) {
                     const gridStep = 10 / mmp;
                     if (gridStep > 4) {
-                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; 
-                        this.ctx.lineWidth = 1.5; 
-                        this.ctx.beginPath();
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; this.ctx.lineWidth = 1.5; this.ctx.beginPath();
                         const anchor = activeG.poa || { x: 0, y: 0 };
                         for (let x = anchor.x; x < this.canvas.width; x += gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
                         for (let x = anchor.x - gridStep; x > 0; x -= gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
@@ -561,28 +559,28 @@
                 const coiX = center.x + s.dx * reportMmScale, coiY = center.y - s.dy * reportMmScale;
                 const mmp = g.isVirtual ? 1 : (this.getGroupMmp(g) || 1);
                 
-                const dy_top = (g.isVirtual ? s.outline.y : (g.poa ? (g.poa.y - s.outline.y) * mmp : 0));
-                const dx_left = (g.isVirtual ? s.outline.x : (g.poa ? (s.outline.x - g.poa.x) * mmp : 0));
+                // Berechnung der Hüllrechteck-Position im ballistischen Raum
+                // outline.maxY ist der ballistische Maximalwert (oberste Kante)
+                const offsetTopBallistic = (g.isVirtual ? s.outline.maxY : (g.poa ? (g.poa.y - s.outline.minY) * mmp : 0));
+                const offsetLeftBallistic = (g.isVirtual ? s.outline.minX : (g.poa ? (s.outline.minX - g.poa.x) * mmp : 0));
                 
-                const boxX = center.x + dx_left * reportMmScale;
-                const boxY = center.y - dy_top * reportMmScale;
+                const boxX = center.x + offsetLeftBallistic * reportMmScale;
+                const boxY = center.y - offsetTopBallistic * reportMmScale; 
                 const boxW = s.outline.w * mmp * reportMmScale;
                 const boxH = s.outline.h * mmp * reportMmScale;
 
-                // ES Linie im Bericht
+                // ES Linie
                 if (s.esP1 && s.esP2) {
                     const esP1x = center.x + (g.isVirtual ? s.esP1.x : (s.esP1.x - g.poa.x) * mmp) * reportMmScale;
                     const esP1y = center.y - (g.isVirtual ? s.esP1.y : (g.poa.y - s.esP1.y) * mmp) * reportMmScale;
                     const esP2x = center.x + (g.isVirtual ? s.esP2.x : (s.esP2.x - g.poa.x) * mmp) * reportMmScale;
                     const esP2y = center.y - (g.isVirtual ? s.esP2.y : (g.poa.y - s.esP2.y) * mmp) * reportMmScale;
-                    
                     ctx.beginPath(); ctx.setLineDash([8, 8]); ctx.strokeStyle = 'rgba(153, 27, 27, 0.4)'; ctx.lineWidth = 1.5;
                     ctx.moveTo(esP1x, esP1y); ctx.lineTo(esP2x, esP2y); ctx.stroke(); ctx.setLineDash([]);
                 }
 
                 ctx.strokeStyle = 'rgba(185, 28, 28, 0.4)'; ctx.setLineDash([12, 6]); ctx.lineWidth = 2.0;
-                ctx.strokeRect(boxX, boxY, boxW, boxH);
-                ctx.setLineDash([]);
+                ctx.strokeRect(boxX, boxY, boxW, boxH); ctx.setLineDash([]);
                 
                 ctx.lineWidth = 4.0; ctx.setLineDash([10, 8]); ctx.strokeStyle = '#991b1b'; 
                 ctx.beginPath(); ctx.arc(coiX, coiY, parseFloat(s.r95) * reportMmScale, 0, Math.PI*2); ctx.stroke();
@@ -603,23 +601,13 @@
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#52525b'; ctx.font = '10px Inter'; 
                 ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Stichprobe (n): ${g.hits.length}`, sx + 15, sy + 65);
-                const report = [ 
-                    ["Extremstreuung (ES)", s.es + " mm"], 
-                    ["Breite (H)", s.wMm + " mm"],
-                    ["Höhe (V)", s.hMm + " mm"],
-                    ["ES in MOA", s.esMoa + " MOA"], 
-                    ["Mittlerer Radius", s.mr + " mm"], 
-                    ["Standardabweichung (s)", s.sa + " mm"], 
-                    ["Streukreis R50", s.r50 + " mm"], 
-                    ["Streukreis R95", s.r95 + " mm"], 
-                    ["Treffpunktlage", s.vector] 
-                ];
+                const report = [ ["Extremstreuung (ES)", s.es + " mm"], ["Breite (H)", s.wMm + " mm"], ["Höhe (V)", s.hMm + " mm"], ["ES in MOA", s.esMoa + " MOA"], ["Mittlerer Radius", s.mr + " mm"], ["Standardabweichung (s)", s.sa + " mm"], ["Streukreis R50", s.r50 + " mm"], ["Streukreis R95", s.r95 + " mm"], ["Treffpunktlage", s.vector] ];
                 report.forEach((item, i) => { ctx.fillStyle = '#52525b'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); ctx.fillStyle = '#000000'; ctx.textAlign = "right"; ctx.fillText(item[1], sx + 205, sy + 100 + (i*20)); ctx.textAlign = "left"; });
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 300); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 320);
                 ctx.fillStyle = '#000000'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 360);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#166534", l: false }, { t: "Schwerpunkt (POI)", c: "#0e7490", l: false }, { t: "R50 (Streukreis)", c: "#0e7490", l: true }, { t: "R95 (Streukreis)", c: "#991b1b", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 385 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#52525b'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.43 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
+                ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(`v6.45 | Gitter: 10mm | Zoom: ${this.resultZoom.toFixed(1)}`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
