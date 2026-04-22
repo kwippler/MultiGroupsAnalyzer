@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.18</title>
+    <title>ShotAnalyst v6.20</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -13,22 +13,26 @@
         .sidebar-scroll { max-height: calc(100vh - 320px); overflow-y: auto; }
         input[type="number"]::-webkit-inner-spin-button, 
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-        #stats-panel { cursor: grab; }
+        #stats-panel { cursor: grab; min-width: 300px; }
         #stats-panel:active { cursor: grabbing; }
         .zoom-slider { -webkit-appearance: none; width: 100%; height: 4px; background: #3f3f46; border-radius: 2px; outline: none; }
         .zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; background: #ef4444; border-radius: 50%; cursor: pointer; border: 2px solid #fff; }
+        /* Sicherstellung der einzeiligen Darstellung */
+        .stats-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; white-space: nowrap; }
     </style>
 </head>
 <body class="bg-zinc-950 text-slate-200 overflow-hidden h-screen flex justify-center items-center">
 
     <div class="w-full max-w-[1920px] h-[92vh] bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl flex overflow-hidden">
         
+        <!-- Seitenleiste -->
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.18</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.20</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
+                <!-- Sitzungssteuerung -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Sitzungsdaten</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -38,6 +42,7 @@
                     </div>
                 </section>
 
+                <!-- Systemparameter -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Systemparameter</h2>
                     <div class="space-y-3">
@@ -63,6 +68,7 @@
                     </div>
                 </section>
 
+                <!-- Arbeitsmodi -->
                 <section>
                     <h2 class="text-xs font-semibold text-zinc-500 uppercase mb-3 text-zinc-400">Arbeitsmodi</h2>
                     <div class="grid grid-cols-2 gap-2">
@@ -76,6 +82,7 @@
                     </div>
                 </section>
 
+                <!-- Gruppenverwaltung -->
                 <section>
                     <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xs font-semibold text-zinc-500 uppercase text-zinc-400">Gruppenverwaltung</h2>
@@ -95,6 +102,7 @@
             </div>
         </aside>
 
+        <!-- Hauptbereich -->
         <main id="main-area" class="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
             <div id="view-analysis" class="relative w-full h-full flex items-center justify-center">
                 <div id="canvas-container" class="relative">
@@ -133,11 +141,11 @@
                 </div>
             </div>
             
-            <div id="stats-panel" class="absolute top-6 right-6 w-64 bg-zinc-900/90 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-sm no-cursor hidden select-none z-40">
-                <div class="flex justify-between items-center border-b border-zinc-700 pb-1 mb-3">
-                    <h3 class="text-xs font-bold text-red-500 uppercase">Analyseergebnisse</h3>
+            <div id="stats-panel" class="absolute top-6 right-6 bg-zinc-900/95 border border-zinc-700 p-4 rounded shadow-2xl backdrop-blur-md no-cursor hidden select-none z-40">
+                <div class="flex justify-between items-center border-b border-zinc-700 pb-2 mb-3">
+                    <h3 class="text-[11px] font-bold text-red-500 uppercase tracking-wider">Analyseergebnisse</h3>
                 </div>
-                <div id="stats-content" class="space-y-2 text-xs"></div>
+                <div id="stats-content" class="space-y-3 text-[11px] font-medium"></div>
             </div>
         </main>
     </div>
@@ -179,7 +187,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.18", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
+                const data = { version: "6.20", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, scale: this.scale, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Session_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -298,21 +306,16 @@
                 const mmp = this.mmPerPixel; const distM = parseFloat(document.getElementById('distance').value) || 100;
                 const coi = { x: hits.reduce((a,b)=>a+b.x,0)/hits.length, y: hits.reduce((a,b)=>a+b.y,0)/hits.length };
                 
-                // Winkelberechnungsfaktor (MOA)
                 const moaFactor = distM * 0.290888;
-
-                // Streuungsmaße
                 let es = 0; if (hits.length > 1) { for(let i=0; i<hits.length; i++) for(let j=i+1; j<hits.length; j++) es = Math.max(es, Math.hypot(hits[i].x-hits[j].x, hits[i].y-hits[j].y)); }
                 const esMm = es * mmp;
                 const esMoa = esMm / moaFactor;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length;
                 
-                // Radiale Distanzen vom TPZ
                 const dists = hits.map(h => Math.hypot(h.x - coi.x, h.y - coi.y) * mmp);
                 const r50 = this.getPercentile(dists, 0.5); 
                 const r95 = this.getPercentile(dists, 0.95);
                 
-                // Standardabweichung (SA)
                 let sa = 0;
                 if (hits.length > 1) {
                     const sumSq = dists.reduce((a, d) => a + d*d, 0);
@@ -353,13 +356,13 @@
                 if (s) { 
                     p.classList.remove('hidden'); 
                     document.getElementById('stats-content').innerHTML = `
-                        <div class="flex justify-between"><span>Extremstreuung:</span> <span>${s.es} mm (${s.esMoa} MOA)</span></div>
-                        <div class="flex justify-between"><span>Mittlerer Radius:</span> <span>${s.mr} mm</span></div>
-                        <div class="flex justify-between text-cyan-400"><span>Standardabw.:</span> <span>${s.sa} mm (${s.saMoa} MOA)</span></div>
-                        <div class="flex justify-between"><span>R50:</span> <span>${s.r50} mm</span></div>
-                        <div class="flex justify-between"><span>R95:</span> <span>${s.r95} mm</span></div>
-                        <div class="flex justify-between border-t border-zinc-800 pt-2"><span>Abweichung:</span> <span>${s.vector}</span></div>
-                        <div class="mt-2 text-cyan-400 font-bold border border-cyan-500/20 p-2 bg-cyan-500/5 rounded text-center">MIL: ${s.clicks}</div>`; 
+                        <div class="stats-row"><span class="text-zinc-400">Extremstreuung (ES):</span> <span class="font-bold">${s.es} mm (${s.esMoa} MOA)</span></div>
+                        <div class="stats-row"><span class="text-zinc-400">Mittlerer Radius (MR):</span> <span class="font-bold">${s.mr} mm</span></div>
+                        <div class="stats-row text-cyan-400"><span class="font-bold">Standardabw. (SA):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
+                        <div class="stats-row"><span class="text-zinc-400">R50 (Median):</span> <span class="font-bold">${s.r50} mm</span></div>
+                        <div class="stats-row"><span class="text-zinc-400">R95:</span> <span class="font-bold">${s.r95} mm</span></div>
+                        <div class="stats-row border-t border-zinc-800 pt-2"><span class="text-zinc-400">Treffpunktlage:</span> <span class="font-bold">${s.vector}</span></div>
+                        <div class="mt-2.5 text-cyan-400 font-bold border border-cyan-500/20 py-2 px-3 bg-cyan-500/5 rounded text-center">Korrektur MIL: ${s.clicks}</div>`; 
                 } else p.classList.add('hidden');
             }
 
@@ -383,7 +386,7 @@
                     ctx.fillStyle = '#fff'; ctx.font = 'bold 10px Inter'; ctx.fillText(i+1, hx + 5, hy - 5); 
                 });
 
-                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 580); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 580);
+                const sx = w - 240, sy = 40; ctx.fillStyle = 'rgba(24, 24, 27, 0.98)'; ctx.fillRect(sx, sy, 220, 600); ctx.strokeStyle = '#22d3ee'; ctx.strokeRect(sx, sy, 220, 600);
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 12px Inter'; ctx.fillText("ANALYSEBERICHT", sx + 15, sy + 25);
                 ctx.fillStyle = '#71717a'; ctx.font = '10px Inter'; 
                 ctx.fillText(`Element: ${g.name}`, sx + 15, sy + 50); ctx.fillText(`Anzahl (n): ${g.hits.length}`, sx + 15, sy + 65);
@@ -394,9 +397,9 @@
                     ["Mittlerer Radius", s.mr + " mm"], 
                     ["Std.-Abweichung", s.sa + " mm"],
                     ["SA in MOA", s.saMoa + " MOA"],
-                    ["R50 (50% Vertr.)", s.r50 + " mm"], 
-                    ["R95 (95% Vertr.)", s.r95 + " mm"],
-                    ["Abweichung X/Y", s.vector]
+                    ["R50 (Median)", s.r50 + " mm"], 
+                    ["R95", s.r95 + " mm"],
+                    ["Treffpunktlage", s.vector]
                 ];
                 report.forEach((item, i) => { 
                     ctx.fillStyle = '#a1a1aa'; ctx.fillText(item[0], sx + 15, sy + 100 + (i*20)); 
@@ -404,10 +407,10 @@
                 });
                 
                 ctx.fillStyle = '#22d3ee'; ctx.font = 'bold 11px Inter'; ctx.fillText("KORREKTUR MIL:", sx + 15, sy + 280); ctx.font = 'bold 16px Inter'; ctx.fillText(s.clicks, sx + 15, sy + 300);
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.18 | ${Math.round(this.resultZoom*100)}% Zoom`, sx + 15, sy + 565);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.20 | ${Math.round(this.resultZoom*100)}% Vektorskalierung`, sx + 15, sy + 585);
             }
 
-            savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Report_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
+            savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
 
             renderUI() {
                 const list = document.getElementById('groupList'); list.innerHTML = '';
