@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShotAnalyst v6.30</title>
+    <title>ShotAnalyst v6.31</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -35,7 +35,7 @@
         
         <aside class="w-80 border-r border-zinc-800 flex flex-col no-cursor bg-zinc-900 z-10">
             <div class="p-4 border-b border-zinc-800">
-                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.30</span></h1>
+                <h1 class="text-red-500 font-bold text-xl tracking-tight">ShotAnalyst <span class="text-slate-400 font-light">v6.31</span></h1>
             </div>
 
             <div class="sidebar-scroll flex-1 p-4 space-y-6">
@@ -190,7 +190,7 @@
             }
 
             saveSession() {
-                const data = { version: "6.30", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
+                const data = { version: "6.31", timestamp: Date.now(), distance: document.getElementById('distance').value, refMm: document.getElementById('refMm').value, caliber: document.getElementById('caliber').value, groups: this.groups };
                 const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
                 const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ShotAnalyst_Sitzung_${new Date().toISOString().slice(0,10)}.json`; a.click();
             }
@@ -218,18 +218,11 @@
                 reader.onload = (event) => {
                     const tempImg = new Image();
                     tempImg.onload = () => { 
-                        this.originalImg = tempImg; 
-                        this.croppedImg = tempImg; 
-                        this.imageHistory = []; 
-                        this.pendingHit = null;
-                        this.draggingHit = null;
-                        this.cropRect = null;
-                        this.cropStart = null;
+                        this.originalImg = tempImg; this.croppedImg = tempImg; this.imageHistory = []; 
+                        this.pendingHit = null; this.draggingHit = null; this.cropRect = null; this.cropStart = null;
                         this.groups.forEach(g => g.selected = false);
                         if (this.groups.some(g => g.hits.length > 0)) this.addGroup();
-                        this.resizeCanvas(); 
-                        this.draw(); 
-                        this.renderUI(); 
+                        this.resizeCanvas(); this.draw(); this.renderUI(); 
                         e.target.value = "";
                     };
                     tempImg.src = event.target.result;
@@ -239,12 +232,9 @@
 
             resetCrop() {
                 if (this.originalImg) {
-                    this.croppedImg = this.originalImg; 
-                    this.imageHistory = [];
+                    this.croppedImg = this.originalImg; this.imageHistory = [];
                     if (this.activeGroup) this.activeGroup.scale = { p1: null, p2: null };
-                    this.resizeCanvas(); 
-                    this.draw(); 
-                    this.renderUI();
+                    this.resizeCanvas(); this.draw(); this.renderUI();
                 }
             }
 
@@ -268,7 +258,6 @@
                 const x = e.clientX - rect.left, y = e.clientY - rect.top;
                 const ag = this.activeGroup;
                 if (!ag) return;
-
                 if (this.mode === 'crop') this.cropStart = { x, y };
                 else if (this.mode === 'scale') {
                     if (!ag.scale.p1) ag.scale.p1 = { x, y }; else if (!ag.scale.p2) ag.scale.p2 = { x, y };
@@ -313,7 +302,6 @@
             addGroup() { this.groups.forEach(g => g.active = false); this.groups.push({ id: Date.now(), name: `Gruppe ${this.groups.length + 1}`, hits: [], poa: null, active: true, selected: false, isVirtual: false, scale: { p1: null, p2: null } }); this.draw(); this.renderUI(); }
             selectGroup(id) { this.groups.forEach(g => g.active = (g.id === id)); this.draw(); this.renderUI(); }
             toggleSelection(id) { const g = this.groups.find(x => x.id === id); if (g) g.selected = !g.selected; this.renderUI(); }
-            
             requestMerge() { if (this.groups.filter(g => g.selected).length >= 2) document.getElementById('merge-confirm').classList.remove('hidden'); }
             
             finalizeMerge() {
@@ -325,10 +313,7 @@
                 });
                 const virtualGroup = { id: Date.now(), name: `Verbund (${selectedGroups.length} El.)`, hits: transformedHits, poa: { x: 0, y: 0 }, active: true, selected: false, isVirtual: true, scale: null };
                 this.groups.forEach(g => { g.active = false; g.selected = false; });
-                this.groups.push(virtualGroup); 
-                document.getElementById('merge-confirm').classList.add('hidden'); 
-                this.draw(); 
-                this.renderUI();
+                this.groups.push(virtualGroup); document.getElementById('merge-confirm').classList.add('hidden'); this.draw(); this.renderUI();
             }
 
             calculateStats(hits, group) {
@@ -346,13 +331,14 @@
                 const r50 = 1.1774 * sigma;
                 const r95 = 2.4477 * sigma;
                 const mr = hits.reduce((s, h) => s + Math.hypot(h.x-coi.x, h.y-coi.y), 0) / hits.length * mmp;
-                let vector = "--", clicks = "--", dx = 0, dy = 0;
-                if (isMetric || group.poa) {
-                    dx = isMetric ? coi.x : (coi.x - group.poa.x) * mmp;
-                    dy = isMetric ? coi.y : (group.poa.y - coi.y) * mmp;
-                    vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
-                    const mmC = distM * 0.1; clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
-                }
+                
+                // VERBUNDGRUPPEN FIX: dx/dy beziehen sich IMMER auf (0,0) Haltepunkt
+                const dx = isMetric ? coi.x : (group.poa ? (coi.x - group.poa.x) * mmp : 0);
+                const dy = isMetric ? coi.y : (group.poa ? (group.poa.y - coi.y) * mmp : 0);
+                
+                const vector = `X:${dx > 0 ? '+' : ''}${dx.toFixed(1)} / Y:${dy > 0 ? '+' : ''}${dy.toFixed(1)} mm`;
+                const mmC = distM * 0.1;
+                const clicks = `${dy > 0 ? 'D' : 'U'}${Math.abs(Math.round(dy/mmC))} / ${dx > 0 ? 'L' : 'R'}${Math.abs(Math.round(dx/mmC))}`;
                 return { es: esMm.toFixed(2), esMoa: (esMm/moaFactor).toFixed(3), mr: mr.toFixed(2), sa: sigma.toFixed(2), saMoa: (sigma/moaFactor).toFixed(3), r50: r50.toFixed(2), r95: r95.toFixed(2), vector, clicks, coi, dx, dy, r50val: r50, r95val: r95 };
             }
 
@@ -360,43 +346,27 @@
                 if (this.viewMode === 'result') return;
                 this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
                 if (this.croppedImg) this.ctx.drawImage(this.croppedImg, 0,0,this.canvas.width,this.canvas.height);
-                
-                const g = this.activeGroup;
-                if (!g) return;
-
-                // 10-mm-Raster für Analyse-Canvas
+                const g = this.activeGroup; if (!g) return;
                 if (!g.isVirtual && g.scale.p1 && g.scale.p2) {
-                    const mmp = this.getGroupMmp(g);
-                    const gridStep = 10 / mmp; // 10 mm in Pixeln
-                    if (gridStep > 4) { // Schutz gegen Überlagerung bei extrem kleiner Skalierung
-                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-                        this.ctx.lineWidth = 0.5;
-                        this.ctx.beginPath();
+                    const mmp = this.getGroupMmp(g); const gridStep = 10 / mmp;
+                    if (gridStep > 4) {
+                        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; this.ctx.lineWidth = 0.5; this.ctx.beginPath();
                         const anchor = g.poa || { x: 0, y: 0 };
-                        // Vertikale Linien
                         for (let x = anchor.x; x < this.canvas.width; x += gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
                         for (let x = anchor.x - gridStep; x > 0; x -= gridStep) { this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); }
-                        // Horizontale Linien
                         for (let y = anchor.y; y < this.canvas.height; y += gridStep) { this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); }
                         for (let y = anchor.y - gridStep; y > 0; y -= gridStep) { this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); }
                         this.ctx.stroke();
                     }
                 }
-
                 if (g.isVirtual) { this.updateStats(); return; }
-
-                const mmp = this.getGroupMmp(g); 
-                const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
-                
-                this.ctx.strokeStyle = '#ef4444';
-                g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
-
+                const mmp = this.getGroupMmp(g); const calP = (parseFloat(document.getElementById('caliber').value) || 5.56) / mmp;
+                this.ctx.strokeStyle = '#ef4444'; g.hits.forEach(h => { this.ctx.beginPath(); this.ctx.arc(h.x, h.y, calP/2, 0, Math.PI*2); this.ctx.stroke(); });
                 if (g.poa) { 
                     this.ctx.strokeStyle = '#22c55e'; this.ctx.beginPath(); 
                     this.ctx.moveTo(g.poa.x-10, g.poa.y); this.ctx.lineTo(g.poa.x+10, g.poa.y); 
                     this.ctx.moveTo(g.poa.x, g.poa.y-10); this.ctx.lineTo(g.poa.x, g.poa.y+10); this.ctx.stroke(); 
                 }
-
                 if (g.hits.length >= 2) {
                     const s = this.calculateStats(g.hits, g);
                     if (s) { 
@@ -406,7 +376,6 @@
                         this.ctx.beginPath(); this.ctx.arc(s.coi.x, s.coi.y, 2.5, 0, Math.PI*2); this.ctx.fill(); 
                     }
                 }
-
                 if (g.scale && g.scale.p1) { 
                     this.ctx.strokeStyle = '#ef4444'; this.ctx.beginPath(); 
                     this.ctx.arc(g.scale.p1.x, g.scale.p1.y, 3, 0, Math.PI*2); 
@@ -417,9 +386,7 @@
             }
 
             updateStats() {
-                const ag = this.activeGroup;
-                const s = this.calculateStats(ag?.hits || [], ag);
-                const p = document.getElementById('stats-panel');
+                const ag = this.activeGroup; const s = this.calculateStats(ag?.hits || [], ag); const p = document.getElementById('stats-panel');
                 if (s) { 
                     p.classList.remove('hidden'); 
                     document.getElementById('stats-content').innerHTML = `
@@ -428,7 +395,7 @@
                         <div class="stats-row text-cyan-400"><span class="font-bold">Standardabweichung (s):</span> <span class="font-bold">${s.sa} mm (${s.saMoa} MOA)</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Streukreis R50 (CEP):</span> <span class="font-bold">${s.r50} mm</span></div>
                         <div class="stats-row"><span class="text-zinc-400">Streukreis R95:</span> <span class="font-bold">${s.r95} mm</span></div>
-                        <div class="stats-row border-t border-zinc-800 pt-2"><span class="text-zinc-400">Treffpunktlage:</span> <span class="font-bold">${s.vector}</span></div>
+                        <div class="stats-row border-t border-zinc-800 pt-2"><span class="text-zinc-400">Treffpunktlage:</span> <span class="font-bold">${s.vector} ${ag.isVirtual ? '(Ref. (0,0))' : ''}</span></div>
                         <div class="mt-2.5 text-cyan-400 font-bold border border-cyan-500/20 py-2 px-3 bg-cyan-500/5 rounded text-center whitespace-nowrap">Korrektur MIL: ${s.clicks}</div>`; 
                 } else p.classList.add('hidden');
             }
@@ -436,13 +403,12 @@
             drawResult() {
                 const ctx = this.resCtx; const w = this.resCanvas.width, h = this.resCanvas.height; const center = { x: w/2 - 100, y: h/2 };
                 ctx.fillStyle = '#09090b'; ctx.fillRect(0,0,w,h);
-                const reportMmScale = this.resultZoom;
-                const gridSpacing = 10 * reportMmScale;
+                const reportMmScale = this.resultZoom; const gridSpacing = 10 * reportMmScale;
                 ctx.strokeStyle = '#27272a'; ctx.lineWidth = 0.5; ctx.beginPath();
                 for (let x = center.x; x < w; x += gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
-                for (let x = center.x; x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
+                for (let x = center.x > 0; x -= gridSpacing) { ctx.moveTo(x, 0); ctx.lineTo(x, h); }
                 for (let y = center.y; y < h; y += gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
-                for (let y = center.y; y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
+                for (let y = center.y > 0; y -= gridSpacing) { ctx.moveTo(0, y); ctx.lineTo(w, y); }
                 ctx.stroke();
                 ctx.strokeStyle = '#18181b'; ctx.lineWidth = 1;
                 for(let r=50; r<600; r+=50) { ctx.beginPath(); ctx.arc(center.x, center.y, r * reportMmScale, 0, Math.PI*2); ctx.stroke(); }
@@ -473,7 +439,7 @@
                 ctx.fillStyle = '#fff'; ctx.font = 'bold 11px Inter'; ctx.fillText("LEGENDE", sx + 15, sy + 350);
                 const leg = [ { t: "Haltepunkt (POA)", c: "#22c55e", l: false }, { t: "Schwerpunkt (POI)", c: "#22d3ee", l: false }, { t: "R50 (Streukreis)", c: "#22d3ee", l: true }, { t: "R95 (Streukreis)", c: "#ef4444", l: true } ];
                 leg.forEach((item, i) => { const ly = sy + 375 + (i * 25); ctx.strokeStyle = item.c; ctx.lineWidth = 2; if(item.l) { ctx.setLineDash([4, 2]); ctx.beginPath(); ctx.moveTo(sx+15, ly); ctx.lineTo(sx+35, ly); ctx.stroke(); ctx.setLineDash([]); } else { ctx.beginPath(); ctx.arc(sx+25, ly, 3, 0, Math.PI*2); ctx.stroke(); } ctx.fillStyle = '#a1a1aa'; ctx.font = '9px Inter'; ctx.fillText(item.t, sx + 45, ly + 3); });
-                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.30 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
+                ctx.fillStyle = '#71717a'; ctx.font = '9px Inter'; ctx.fillText(`v6.31 | Vektorskalierung: ${this.resultZoom.toFixed(1)} px/mm`, sx + 15, sy + 625);
             }
 
             savePlot() { if (this.viewMode !== 'result') this.toggleView(); const a = document.createElement('a'); a.download = `ShotAnalyst_Bericht_${this.activeGroup.name}.png`; a.href = this.resCanvas.toDataURL("image/png"); a.click(); }
@@ -481,9 +447,7 @@
             exportCSV() {
                 let c = "\ufeffName;n;X_mm;Y_mm\n";
                 this.groups.forEach(g => {
-                    const isMetric = g.isVirtual;
-                    const mmp = isMetric ? 1 : this.getGroupMmp(g);
-                    const poa = g.poa || {x:0, y:0};
+                    const isMetric = g.isVirtual; const mmp = isMetric ? 1 : this.getGroupMmp(g); const poa = g.poa || {x:0, y:0};
                     g.hits.forEach((h, i) => {
                         const dx = isMetric ? h.x : (h.x - poa.x) * mmp;
                         const dy = isMetric ? h.y : (poa.y - h.y) * mmp;
@@ -499,7 +463,7 @@
                 this.groups.forEach(g => {
                     const d = document.createElement('div'); d.className = `flex items-center gap-2 p-1 rounded transition ${g.active ? 'bg-red-500/5 ring-1 ring-red-500/30' : ''}`;
                     const label = document.createElement('div'); label.className = `flex-1 p-2 rounded border cursor-pointer flex justify-between items-center ${g.active ? 'border-red-500/50 bg-red-500/10 text-red-400' : 'border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800'}`;
-                    label.onclick = () => this.selectGroup(g.id); label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold">${g.name}</span><span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 px-1">✕</button>`;
+                    label.onclick = () => this.selectGroup(g.id); label.innerHTML = `<div class="flex flex-col"><span class="text-xs font-bold">${g.name}</span><span class="text-[9px] uppercase text-zinc-500">${g.hits.length} Treffer</span></div><button onclick="event.stopPropagation(); app.deleteGroup(${g.id})" class="text-zinc-600 hover:text-red-500 px-1 transition-colors">✕</button>`;
                     const cb = document.createElement('input'); cb.type = 'checkbox'; cb.className = 'w-4 h-4 rounded-full border-zinc-700 bg-zinc-800 text-red-600'; cb.checked = g.selected; cb.onchange = () => this.toggleSelection(g.id);
                     d.appendChild(cb); d.appendChild(label); list.appendChild(d);
                 });
